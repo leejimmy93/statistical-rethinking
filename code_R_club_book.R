@@ -1260,7 +1260,7 @@ pairs(~ kcal.per.g + perc.fat + perc.lactose, # how to understand this fomula
 # R code 5.39 compute the correlation between the two variables
 cor(d$perc.fat, d$perc.lactose)
 
-# R code 5.40 # how to understand this, leave for tomorrow... 
+# R code 5.40 # how to understand this, leave for later... 
 sim.coll <- function(r=0.9){
   d$x <- rnorm(nrow(d), mean=r*d$perc.fat,
   sd=sqrt((1-r^2)*var(d$perc.fat)))
@@ -1282,32 +1282,56 @@ plot(stddev ~ r.seq, type="l", col=rangi2, lwd=2, xlab="corrleation")
 N <- 100
 
 # simulate initial heights
-h0 <- rnorm(N, 10, 2)
+h0 <- rnorm(N, 10, 2) # size N, mean 10, sd of 2 
+h0 # initial height
+hist(h0)
 
 # assign treatments and simulate fungus and growth
-treatment <- rep(0:1, each=N/2)
-fungus <- rbinom(N, size = 1, prob = 0.5-treatment*0.4)
-h1 <- h0+ rnorm(N, 5-3*fungus)
+treatment <- rep(0:1, each=N/2) # repeat 0 & 1 each N/2 times, 1 trt, 0 no trt
+treatment
+fungus <- rbinom(N, size = 1, prob = 0.5-treatment*0.4) 
+# N plants, each with 1 trial and 0.5-treatment*0.4 probability of fungus infection
+fungus # 1 means w/ fungus infection, 0 means w/o
+?rbinom
+h1 <- h0+ rnorm(N, 5-3*fungus) # final height of plants
+set.seed(100)
+rnorm(N, 5-3*fungus, 1) # size N, mean 5-3*fungus, sd of 1 yes!!! 
+# Q!!! rnomr iterate through every item in 5-3*fungus as the mean? 
+set.seed(100)
+rnorm(N, 5-3*fungus)
+5-3*fungus
+h1
+?rnorm
 
 # compse a clean data frame
 d <- data.frame(h0=h0, h1=h1, treatment=treatment, fungus=fungus)
+d
 
 # R code 5.42, fit a model that includes all the available variable from R 5.41
 m5.13 <- map(
   alist(
     h1 ~ dnorm(mu, sigma),
-    mu <- a + bh*h0 + bt *treatment + bf*fungus,
-    a ~ dnorm(0, 100),
-    c(bh,bt,bf) ~ dnorm(0, 10),
+    mu <- a + bh*h0 + bt *treatment + bf*fungus, # fomula
+    a ~ dnorm(0, 100), # intercept, mean of 0, sd of 100 
+    c(bh,bt,bf) ~ dnorm(0, 10), # what is this? QQQQQQ !!!
     sigma ~ dunif(0, 10)
   ),
   data = d)
 precis(m5.13)
 
+?dnorm
 
-
-
-
+# R code 5.43 omit post-trt variable fungus
+m5.14 <- map(
+  alist(
+    h1 ~ dnorm(mu, sigma),
+    mu <- a + bh*h0 + bt*treatment,
+    a ~ dnorm(0, 100),
+    c(bh,bt) ~ dnorm(0, 10),
+    sigma ~ dunif(0, 10)
+  ),
+  data = d)
+precis(m5.14)
 
 
 
