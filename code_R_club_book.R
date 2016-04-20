@@ -1184,7 +1184,125 @@ m5.8 <- map(
   data=d)
 precis(m5.8)
 
+# a graphic view of the precis output
+plot(precis(m5.8))
 
+# R code 5.32
+post <- extract.samples(m5.8)
+?extract.samples
+plot(bl ~ br, post, col=col.alpha(rangi2, 0.1), pch=16)
+
+# R code 5.33
+sum_blbr <- post$bl + post$br
+dens(sum_blbr, col=rangi2, lwd=2, xlab="sum of bl and br")
+
+# R code 5.34
+m5.9 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + bl*leg_left,
+    a ~ dnorm(10, 100),
+    bl ~ dnorm(2, 10),
+    sigma ~ dunif(0, 10)
+  ), 
+  data = d)
+precis(m5.9)
+
+# R code 5.35, get back to the primate mild data
+data("milk")
+d <- milk
+
+# R code 5.36 model kcal.per.g as a fxn of perc.fat & perc.lactose
+# with two bivariate regressions
+# kcal.per.g regressed on perc.fat
+m5.10 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + bf * perc.fat,
+    a ~ dnorm(0.6, 10),
+    bf ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), 
+  data = d)
+
+# kcal.per.g regressed on perc.lactose
+m5.11 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + bl*perc.lactose,
+    a ~ dnorm(0.6, 10),
+    bl ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), 
+  data = d)
+
+precis(m5.10, digits = 3)
+precis(m5.11, digits = 3)
+
+# R code 5.37
+m5.12 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + bf * perc.fat + bl* perc.lactose,
+    a ~ dnorm(0.6, 10),
+    bf ~ dnorm(0, 1),
+    bl ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ),
+  data = d)
+precis(m5.12, digits = 3)
+
+# R code 5.38 plot to see the problem ???
+pairs(~ kcal.per.g + perc.fat + perc.lactose, # how to understand this fomula
+      data=d, col=rangi2)
+?pairs
+
+# R code 5.39 compute the correlation between the two variables
+cor(d$perc.fat, d$perc.lactose)
+
+# R code 5.40 # how to understand this, leave for tomorrow... 
+sim.coll <- function(r=0.9){
+  d$x <- rnorm(nrow(d), mean=r*d$perc.fat,
+  sd=sqrt((1-r^2)*var(d$perc.fat)))
+  m <- lm(kcal.per.g ~ perc.fat + x, data = d)
+  sqrt(diag(vcov(m)))[2] # stddev of parameter
+}
+
+rep.sim.coll <- function(r=0.9, n=100){
+  stddev <- replicate(n, sim.coll(r))
+  mean(stddev)
+}
+
+r.seq <- seq(0, 0.99, by = 0.01)
+stddev <- sapply(r.seq, function(z) rep.sim.coll(r=z, n = 100))
+plot(stddev ~ r.seq, type="l", col=rangi2, lwd=2, xlab="corrleation")
+
+# R code 5.41 simulate data for post-treatment variable 
+# number of plants
+N <- 100
+
+# simulate initial heights
+h0 <- rnorm(N, 10, 2)
+
+# assign treatments and simulate fungus and growth
+treatment <- rep(0:1, each=N/2)
+fungus <- rbinom(N, size = 1, prob = 0.5-treatment*0.4)
+h1 <- h0+ rnorm(N, 5-3*fungus)
+
+# compse a clean data frame
+d <- data.frame(h0=h0, h1=h1, treatment=treatment, fungus=fungus)
+
+# R code 5.42, fit a model that includes all the available variable from R 5.41
+m5.13 <- map(
+  alist(
+    h1 ~ dnorm(mu, sigma),
+    mu <- a + bh*h0 + bt *treatment + bf*fungus,
+    a ~ dnorm(0, 100),
+    c(bh,bt,bf) ~ dnorm(0, 10),
+    sigma ~ dunif(0, 10)
+  ),
+  data = d)
+precis(m5.13)
 
 
 
