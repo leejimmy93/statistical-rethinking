@@ -1,0 +1,1237 @@
+# R code 2.1
+ways <- c(0, 3, 8, 9, 0)
+ways/sum(ways)
+fomula(sum)
+
+# R code 2.2
+temp<- dbinom(6, size=9, prob = 0.5)
+temp
+help(dbinom)
+
+# R code 2.3
+# define grid
+p_grid <- seq(from = 0, to = 1, length.out = 100) 
+# p_grid <- seq(from = 0, to = 1, by=0.2)
+p_grid
+# define prior
+prior <- rep(2, 100)
+prior <- ifelse(p_grid < 0.5, 1, 2) # does 0 & 1 matter or not? 
+# prior <- exp(-5*abs(p_grid - 0.5))
+help("ifelse")
+# log(exp(3))
+prior
+
+# compute likelihood at each value in grid
+likelihood <- dbinom(6, size = 9, prob = p_grid)
+likelihood
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+# R code 2.4, display the posterior distribution
+plot(p_grid, posterior, type = "b", 
+     xlab="probability of water", ylab="posterior probabilty")
+mtext("20 points")
+help(plot)
+
+# R code 2.5: replicate the different prior in the previous code
+
+# R code 0.5
+install.packages(c("coda","mvtnorm","devtools"))
+library(devtools)
+devtools::install_github("rmcelreath/rethinking")
+
+# R code 2.6 
+library(rethinking)
+globe.qa <- map(
+  alist(
+    w ~ dbinom(9,p), # binormial likelihood
+    p ~ dunif(0,1)   # uniform prior
+  ),
+  data = list(w=6)
+)
+# display summary of quandratic approximation
+precis(globe.qa)
+
+help("~")
+help("dbeta")
+data = list(w=6)
+data
+
+# R code 2.7
+# analytical calculation
+w <- 6
+n <- 9 
+curve(dbeta(x, w+1, n-w+1), from = 0, to = 1)
+# quandratic approximation
+curve(dnorm(x, 0.67, 0.16), lty=2, add=TRUE)
+
+# 2M1
+# R code 2.3
+# define grid
+p_grid <- seq(from = 0, to = 1, length.out = 20)
+p_grid
+# define prior
+prior <- rep(1, 20)
+prior
+# compute likelihood at each value in grid
+likelihood <- dbinom(5, size = 7, prob = p_grid)
+likelihood
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+# R code 2.4, display the posterior distribution
+plot(p_grid, posterior, type = "b", 
+     xlab="probability of water", ylab="posterior probabilty")
+mtext("3 points")
+help(plot)
+
+# 2M2
+# R code 2.3
+# define grid
+p_grid <- seq(from = 0, to = 1, length.out = 20)
+p_grid
+# define prior
+prior <- ifelse(p_grid<0.5, 0, 1)
+prior
+# compute likelihood at each value in grid
+likelihood <- dbinom(5, size = 7, prob = p_grid)
+likelihood
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+# display the posterior distribution
+plot(p_grid, posterior, type = "b", 
+     xlab="probability of water", ylab="posterior probabilty")
+mtext("3 points")
+help("ifelse")
+
+# 2H3
+# define grid
+p_grid <- seq(from = 0, to = 1, length.out = 20)
+p_grid
+# define prior
+prior <- ifelse(p_grid<0.1, 0.5, 0)
+prior
+# compute likelihood at each value in grid
+likelihood <- dbinom(1, size = 1, prob = p_grid)
+likelihood
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+# display the posterior distribution
+plot(p_grid, posterior, type = "b", 
+     xlab="probability of species A", ylab="posterior probabilty")
+mtext("2 points")
+
+# 02/25/2016
+# R code 3.1
+PrPV <- 0.95 # Pr(vam|positive)
+PrPM <- 0.01 # Pr(positive|mortal)
+PrV <- 0.001 # Pr(vam)
+# the Pr of positive
+PrP <- PrPV * PrV + PrPM * (1-PrV)  
+# calculate the Pr of correctly identify a vampire
+(PrVP <- PrPV*PrV / PrP)
+
+# R code 3.2, compute posteror for the globe tossing model 
+# in the begining of this chapter
+p_grid <- seq(from=0, to=1, length.out = 1000)
+prior <- rep(1, 1000)
+likelihood <- dbinom(6, size = 9, prob = p_grid)
+posterior <- likelihood * prior
+posterior <- posterior/sum(posterior)
+str(posterior)
+
+# R code 3.3
+samples <- sample(p_grid, prob = posterior, size = 1e4, replace = TRUE) # replace arg means you put back 
+# the sample you picked
+str(samples)
+samples
+PI(samples, prob = 0.8) 
+HPDI(samples, prob = 0.8)
+help("sample")
+# R code 3.4
+plot(samples)
+# R code 3.5
+library(rstan)
+library(rethinking)
+dens(samples) # plot the density 
+help("dens")
+
+# R code 3.6
+# add up posterior probability where p<0.5 = the posterior probability 
+# that the proportion of water is less than 0.5
+
+sum(posterior[p_grid < 0.5])
+
+# R code 3.7, add up all of the samples below 0.5, and also divide the resulting count
+# by the total number of samples
+sum(samples<0.5)/1e4
+# R code 3.8, the posterior probability lies between 0.5 and 0.75
+sum(samples > 0.5 & samples<0.75)/1e4 
+samples < 0.5
+
+# R code 3.9, the boundary of the lower 80% posterior probability
+quantile(samples, 0.8)
+# the boundary of the middle 80% posterior probability lies between 10% and 90% quantile
+quantile(samples, c(0.1, 0.9))
+help("quantile")
+quantile(samples, probs = c(0.8))
+help("seq")
+seq(0,1,0.25)
+
+#R code 3.11, compute posterior probability and draw 1e4 random samples for 
+# observing 3 water out of 3 tosses
+p_grid <- seq(0,1, length.out = 1000)
+prior <- rep(1,1000)
+likelihood <- dbinom(3, size = 3, prob = p_grid)
+posterior <- likelihood * prior
+posterior <- posterior/sum(posterior)
+samples<- sample(p_grid, size = 1e4, replace = TRUE, prob = posterior)
+
+# R code 3.12, the 50% percentile confidence intervel 
+PI(samples, prob = 0.5) # don't quite understand this! 
+quantile(samples, c(0.25, 0.75))
+help(PI) 
+# how to check the underlying code for a defined funtion??? 
+
+# practice seq()
+seq(0,1,length.out = 10)
+help(seq)
+seq(from = 0, to = 1, length.out = 10)
+
+# R code 3.13, compute the 50% highest posterior density interval 
+HPDI(samples, prob = 0.5)
+
+# R code 3.14, compute the maximum posterior (MAP)
+p_grid[which.max(posterior)]
+# using samples to approximate the MAP
+chainmode(samples, adj=0.01)
+help("chainmode")
+# R code 3.16, posterior mean or median
+mean(samples)
+median(samples)
+
+# R code 3.17, suppose p=0.5 is our decision, the expected loss will be 
+sum(posterior*abs(0.5 - p_grid))
+# R code 3.18, using sapply to repeat calculation, pick every number from p_grid to see 
+# which is the best decision. 
+loss <- sapply(p_grid, function(d) sum(posterior*abs(d-p_grid))) # pick every p_grid and apply
+# some fxn to it, function(d): define the fxn, but this fxn is only used here; the last arg
+# applys the function on p_grid, in here it may works like take an item from p_grid, and subtract
+# every item in p_grid to see how far this item (d) is away from every item in p_grid. 
+
+help(sapply) # learn more about sapply
+
+# R code 3.19, finding the parameter value that minimize the loss
+p_grid[which.min(loss)]
+
+# 03/03/2016
+# R code 3.20
+dbinom(0:2, size = 2, prob = 0.7)
+help("dbinom")
+# R code 3.21, a single dummy data observation of w can be sampled with, among two tosses, 
+# how many times you can see "w", with the prob of 0.7
+rbinom(1, size = 2, prob = 0.7)
+
+#R code 3.22, a set of 10 simulations can be made by 
+rbinom(10, size = 2, prob = 0.7)
+# R code 3.23, generate 100,000 dummy observations, to verify that each value appears 
+# in proportion to its likelihood
+
+dummy_w <- rbinom(1e5, size = 2, prob = 0.7)
+table(dummy_w)/1e5
+help("table")
+
+# R code 3.24, simulate the same sample as before, 9 tosses
+dummy_w <- rbinom(1e5, size = 9, prob = 0.7)
+library(rethinking)
+simplehist(dummy_w, xlab="dummy water count")
+
+# R code 3.25, to simulate predicted obervations for a single value of p=0.6, and 
+# to generate random binomial samples
+w <- rbinom(1e4, size = 9, prob = 0.6)
+simplehist(w)
+
+# propagate parameter uncertanty into predictions, replace a specific prob with samples
+# from posterior
+w <- rbinom(1e4, size = 9, prob = samples)
+samples
+min(samples)
+max(samples)
+plot(samples)
+simplehist(w)
+
+# goal of this analysis
+# 1) develop a model that fits the data + prior data: use the likelihood fxn and prior info to model data
+# 2) use model to estimate parameters or principles: estimate posterior w/ grid approximation and bayes' equation
+#                                                    sample from posterior and ask about probability and max/min parameters
+#               why sample instead of using the distribution itself? because it is much easier to estimate from the samples
+#               than from the distribution... 
+# 3) make predictions and comapre to other situations: use the model and posterior of uncertainty (0.1 to 0.9 figure 3.6 middle)
+# to make predictions. 
+# Application in real world 
+# 1) segregation ratio 
+# 2) seed germination 
+
+############ Chapter 4
+# R code 4.1
+library(rethinking)
+pos <- replicate(1000, sum(runif(16, -1, 1))) # suppose each step's length is different
+?runif
+runif(16, -1, 1)
+plot(density(pos))
+# 4.2 code
+prod(1+runif(12,0,0.1))
+# 4.3 code
+growth <- replicate(10000, prod(1 + runif(12, 0, 0.1)))
+dens(growth, norm.comp = T)
+# R code 4.4
+big <- replicate(10000, prod(1 + runif(12,0,0.5)))
+small <- replicate(10000, prod(1 + runif(12, 0, 0.01)))
+dens(big, norm.comp = T)
+dens(small, norm.comp = T)
+# R code 4.5
+log.big <- replicate(10000, log(prod(1 + runif(12, 0, 0.5))))
+dens(log.big,norm.comp = T)
+dnorm(0,0,0.1)
+?dnorm
+# 4.6
+w <- 6; n <- 9;
+p_grid <-seq(0,1, length.out = 100)
+posterior <- dbinom(w,n,p_grid)*dunif(p_grid,0,1)
+posterior <- posterior/sum(posterior)
+# R code 4.7
+library(rethinking)
+data("Howell1")
+d <- Howell1
+class(d)
+d
+# 4.8
+str(d)
+# 4.9
+d$height
+# 4.10
+d2 <-d[d$age>=18,]
+str(d2)
+dens(d2$height)
+# 4.11
+curve(dnorm(x, 178, 20), from = 100, to = 250)
+?dnorm
+# 4.12
+curve(dunif(x, 0, 50), -10, 60)
+?dunif # the uniform distribution
+# 4.13
+sample_mu <- rnorm(1e4, 178, 20)
+sample_sigma <- runif(1e4, 0, 50)
+prior_h <- rnorm(1e4, sample_mu, sample_sigma)
+dens(prior_h)
+?rnorm
+prior_h
+# R code 4.14 ??????????????
+mu.list <-seq (140, 160, length.out = 200)
+sigma.list <-seq(4, 9, length.out = 200)
+post <- expand.grid(mu=mu.list, sigma=sigma.list)
+?expand.grid # create a data frame from all combinations of factors
+post$LL <- sapply(1:nrow(post), function(i) sum( dnorm(
+  d2$height, 
+  mean=post$mu[i],
+  sd = post$sigma[i],
+  log = T))) # LL is what? sum of what??? 
+?dnorm
+?sum
+post$prod <- post$LL + dnorm(post$mu, 178, 20, T) +
+  dunif(post$sigma, 0, 50, T) # prod is what? 
+post$prob <- exp(post$prod - max(post$prod)) # prob is probability
+?exp # logarithms and expoenentials
+# 4.15
+contour_xyz(post$mu, post$sigma, post$prob)
+# 4.16
+image_xyz(post$mu, post$sigma, post$prob)
+?expand.grid
+?exp
+?"contour_xyz"
+# 4.17
+sample.row <- sample(1:nrow(post), size = 1e4, replace = T,
+                     prob = post$prob)
+sample.mu <- post$mu[sample.row]
+sample.sigma <- post$sigma[sample.row]
+# 4.18
+plot(sample.mu, sample.sigma, cex=2, pch=16, col=col.alpha(rangi2,0.1))
+# 4.19
+dens(sample.mu)
+dens(sample.sigma)
+# 4.20
+HPDI(sample.mu)
+HPDI(sample.sigma)
+# 4.21, focus on 20 heights
+d3 <- sample(d2$height, size = 20)
+# 4.22 ???????????????????????
+mu.list <-seq (150, 170, length.out = 200)
+sigma.list <-seq(4, 20, length.out = 200)
+post2 <- expand.grid(mu=mu.list, sigma=sigma.list)
+post2$LL <- sapply(1:nrow(post2), function(i) sum( dnorm(
+  d3, 
+  mean=post2$mu[i],
+  sd = post2$sigma[i],
+  log = T)))
+post2$prod <- post2$LL + dnorm(post2$mu, 178, 20, T) +
+  dunif(post2$sigma, 0, 50, T)
+post2$prob <- exp(post2$prod - max(post2$prod))
+
+sample2.row <- sample(1:nrow(post2), size = 1e4, replace = T,
+                     prob = post2$prob)
+sample2.mu <- post2$mu[sample2.row]
+sample2.sigma <- post2$sigma[sample2.row]
+plot(sample2.mu, sample2.sigma, cex=2, pch=16, col=col.alpha(rangi2,0.1))
+# R code 4.23
+dens(sample2.sigma, norm.comp = T) # a long tail on the right
+# R code 4.24, load data and select out the adults
+library(rethinking)
+data("Howell1")
+d <- Howell1
+d2 <- d[d$age >=18,]
+# R code 4.25, fitting the model with map
+flist <- alist(
+  height ~ dnorm(mu, sigma),
+  mu ~ dnorm(178, 20),
+  sigma ~ dunif(0, 50)
+)
+?alist
+flist
+# R code 4.26
+m4.1 <- map(flist, data = d2) 
+?map # find max a posterior estimate
+# R code 4.27
+precis(m4.1)
+?precis # display 
+# R code 4.28
+start <- list(
+  mu=mean(d2$height),
+  sigma=sd(d2$height)
+)
+?list # alist VS. list
+# R code 4.29, a more informative prior for mu, change sd to 0.1, and build the formula 
+# into the call map
+m4.2 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu ~ dnorm(178, 0.1),
+    sigma ~ dunif(0, 50)
+  ),
+  data = d2)
+precis(m4.2)
+# R code 4.30
+vcov(m4.1) # variance-covariance matrix ??????????????????
+?"vcov" # calculate variance-covariance matrix for a fitted model object
+# R code 4.31
+diag(vcov(m4.1))
+?diag # construct a diagonal matrix
+cov2cor(vcov(m4.1))
+?cov2cor # scales a covariance matrix into the correpsonding correlation matrix
+sqrt(diag(vcov(m4.1)))
+precis(m4.1)
+# R code 4.32, sample from multi-dimentional posterior
+library(rethinking)
+post <- extract.samples(m4.1, n = 1e4)
+head(post)
+mean(post$mu)
+mean(post$sigma)
+# R code 4.33
+precis(post)
+plot(post)
+# R code 4.34
+library(MASS)
+post <- mvrnorm(n=1e4, mu = coef(m4.1), Sigma = vcov(m4.1))
+?mvrnorm
+# R code 4.35
+m4.1_logsigma <- map(
+  alist(
+    height ~ dnorm(mu, exp(log_sigma)),
+    mu ~ dnorm(178, 20),
+    log_sigma ~ dnorm(2,10)
+  ), data = d2)
+# R code 4.36
+post <- extract.samples(m4.1_logsigma)
+sigma <- exp(post$log_sigma)
+
+######## for 03/24/2016 ###########################
+library(rethinking)
+data("Howell1")
+
+# R code 4.37
+plot(d2$height ~ d2$weight)
+
+# R code 4.38
+# load data again
+d <- Howell1
+d2 <- d[d$age >=18, ]
+
+# fit model, question, where is start list???????
+m4.3 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b*weight,
+    a ~ dnorm(156, 100),
+    b ~ dnorm(0, 10),
+    sigma ~ dunif(0, 50)
+  ), 
+data=d2)
+?alist # make a collection of arbitrary R objects. alist does not evaluates the code embeded in
+# it. so when define a list of fomulas, should use alist, so the code isn't executed.  
+
+# R code 4.39
+m4.3 <- map(
+  alist(
+    height ~ dnorm(a + b*weight, sigma),
+    a ~ dnorm(178, 100),
+    b ~ dnorm(0, 10),
+    sigma ~ dunif(0, 50)
+  ), 
+  data=d2)
+
+# R code 4.40
+precis(m4.3)
+
+# R code 4.41
+precis(m4.3, corr = T)
+
+# R code 4.42, centering... 
+d2$weight.c <- d2$weight - mean(d2$weight)
+mean(d2$weight.c)
+
+# R code 4.43
+m4.4 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b*weight.c, 
+    a ~ dnorm(178, 100),
+    b ~ dnorm(0, 10),
+    sigma ~ dunif(0, 50)
+  ), 
+  data=d2)
+
+# R code 4.44
+precis(m4.4, corr = T)
+
+# R code 4.45
+plot(height ~ weight, data=d2)
+abline(a=coef(m4.3)["a"], b = coef(m4.3)["b"]) ### understand coef... 
+
+# R code 4.46
+post <- extract.samples(m4.3)
+
+# R code 4.47
+post[1:5,]
+
+# R code 4.48, start with some of the data only, so you will see how adding in more 
+# data changes the scatter of the lines, begin with just the first 10 cases in d2
+N <- 352
+dN <- d2[1:N,] # d <- Howell1; d2 <- d[d$age >=18, ]
+mN <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b*weight,
+    a ~ dnorm(178, 100),
+    b ~ dnorm(0, 10), 
+    sigma ~ dunif(0, 50)
+  ), data = dN)
+?map # find mode of posterior distribution for arbitrary fixed effet models
+
+# R code 4.49
+# extract 20 samples from the posterior
+post <- extract.samples(mN, n=20)
+?extract.samples
+
+# display raw data and sample size
+plot(dN$weight, dN$height,
+     xlim = range(d2$weight), ylim = range(d2$height),
+     col=rangi2, xlab="weight", ylab="height")
+mtext(concat("N= ", N))
+
+# plot the lines, with transparency
+for (i in 1:20)
+  abline(a=post$a[i], b=post$b[i], col=col.alpha("black", 0.3)) # understand this... 
+
+# R code 4.50
+post <- extract.samples(m4.3, n=1e4) # extract 1e4 samples
+mu_at_50 <- post$a + post$b *50 
+mu_at_50
+
+# R code 4.51
+dens(mu_at_50, col=rangi2, lwd=2, xlab="mu|weight=50")
+
+# R code 4.52
+HPDI(mu_at_50, prob = 0.89)
+
+# R code 4.53, understand link!!!!!!!!!!!!!!!!! #################
+####################### problem start from here##################
+precis(m4.3)
+mu <- link(m4.3)
+str(mu) # problem!!!!!!!!!! doesn't look right
+
+# R code 4.54
+# define sequence of weights to compute predictions for 
+# these values will be on the horizontal axis
+weight.seq <- seq(25, 70, by=1)
+
+# use link to compute mu
+# for each sample from posterior
+# and for each weight in weight.seq
+mu <- link(m4.3, data = data.frame(weight=weight.seq))
+str(mu)
+
+# R code 4.55
+# use type="n" to hide raw data
+
+plot(height ~ weight, d2, type="n")
+
+# loop over samples and plot each mu value
+for (i in 1:100)
+  points(weight.seq, mu[i,], pch=16, col=col.alpha(rangi2, 0.1))
+
+# R code 4.56
+# summarize the distributon of mu
+mu.mean <- apply(mu, 2, mean)
+mu.mean
+mu.HPDI <- apply(mu, 2, HPDI, prob=0.89)
+
+# R code 4.57
+# plot raw data
+# fading out points to make line and interval more visible
+plot(height ~ weight, data=d2, col=col.alpha(rangi2, 0.5))
+
+# plot the MAP line, aka the man mu for each weight
+lines(weight.seq, mu.mean)
+
+# plot a shaded region for 89% HDPI
+shade(mu.HPDI, weight.seq)
+
+# R code 4.58
+post <- extract.samples(m4.3)
+?extract.samples
+mu.link <- function(weight) post$a + post$b*weight
+weight.seq <- seq(25, 70, by=1)
+mu <- sapply(weight.seq, mu.link)
+mu.mean <- apply(mu, 2, mean)
+mu.HPDI <- apply(mu, 2, HPDI, prob=0.89)
+
+plot(height ~ weight, data=d2, col=col.alpha(rangi2, 0.5))
+lines(weight.seq, mu.mean)
+shade(mu.HPDI, weight.seq)
+
+# prediction intervals
+# R code 4.59
+sim.height <- sim(m4.3, data = list(weight=weight.seq)) # m4.3 is the linear model
+str(sim.height) 
+?sim # difference between R4.59 & R4.58
+
+# R code 4.60
+height.PI <- apply(sim.height, 2, PI, prob=0.89)
+
+# R code 4.61, plot
+# plot raw data
+plot(height~weight, d2, col=col.alpha(rangi2, 0.5))
+
+# draw MAP line
+lines(weight.seq, mu.mean)
+
+# draw PI region for simulated heights
+shade(height.PI, weight.seq)
+
+# R code 4.62
+sim.height <- sim(m4.3, data = list(weight=weight.seq), n = 1e4)
+height.PI <- apply(sim.height, 2, PI, prob=0.89)
+
+# plot raw data
+plot(height~weight, d2, col=col.alpha(rangi2, 0.5))
+
+# draw MAP line
+lines(weight.seq, mu.mean)
+
+# draw PI region for simulated heights
+shade(height.PI, weight.seq)
+
+# R code 4.63, how sim works
+post <- extract.samples(m4.3)
+weight.seq <- 25:70
+sim.height <- sapply(weight.seq, function(weight)
+  rnorm(
+    n=nrow(post),
+    mean = post$a+post$b*weight,
+    sd=post$sigma))
+height.PI <- apply(sim.height, 2, PI, prob=0.89)
+?rnorm
+
+############## for 04/04/2016 ###################################
+# R code 4.64
+library(rethinking)
+data("Howell1")
+d <- Howell1
+str(d)
+plot(d$height, d$weight)
+
+# R code 4.65
+d$weight.s <- (d$weight - mean(d$weight))/sd(d$weight)
+plot(d$height, d$weight.s)
+
+# R code 4.66
+d$weight.s2 <- d$weight.s^2
+m4.5 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b1*weight.s + b2*weight.s2,
+    a~ dnorm(178, 100),
+    b1 ~ dnorm(0, 10),
+    b2 ~ dnorm(0, 10), 
+    sigma ~ dunif(0, 50)
+  ),
+data = d)
+
+# R code 4.67
+precis(m4.5)
+
+# R code 4.68
+# calculate the mean relationship and the 89% interval 
+# of the mean and the prediction
+weight.seq <-seq(-2.2, 2, length.out = 30)
+pred_dat <- list(weight.s = weight.seq, weight.s2=weight.seq^2)
+mu <- link(m4.5, data = pred_dat) 
+# take map model fit, sample from posterior distribution, and then compute 
+# mu for each case in the data and sample from the posterior distribution
+?link
+dim(mu)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI, prob=0.89)
+sim.height <- sim(m4.5, data = pred_dat)
+?sim
+sim(m4.5, data = pred_dat)
+height.PI <- apply(sim.height, 2, PI, prob=0.89)
+
+# R code 4.69, plot
+plot(height ~ weight.s, d, col=col.alpha(rangi2, 0.5))
+lines(weight.seq, mu.mean)
+shade(mu.PI, weight.seq)
+shade(height.PI, weight.seq)
+
+# R code 4.70
+# fit the model with a slight modification of the parabolic model's code
+d$weight.s3 <- d$weight.s^3
+m4.6 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + b1*weight.s +b2 *weight.s2 + b3*weight.s3,
+    a ~dnorm(178, 100),
+    b1 ~ dnorm(0,10),
+    b2 ~ dnorm(0,10),
+    b3 ~ dnorm(0,10),
+    sigma ~ dunif(0,50)
+  ),
+data = d)
+
+# R code 4.71
+# plot the estimates on the original scale
+plot(height ~ weight.s, d, col=col.alpha(rangi2, 0.5), xaxt="n")
+
+# R code 4.72
+at <- c(-2, -1, 0, 1,2 )
+labels <- at*sd(d$weight) + mean(d$weight)
+axis(side = 1, at = at, labels = round(labels, 1))
+
+### notes from R club
+# equation R markdown for math symbols
+# table function in R make a table from the code 
+
+############### For 04-11-2016 ################################
+
+# R code 5.1
+library(rethinking)
+data("WaffleDivorce")
+d <- WaffleDivorce
+
+# standardize predictor
+d$MedianAgeMarriage.s <- (d$MedianAgeMarriage-mean(d$MedianAgeMarriage))/sd(d$MedianAgeMarriage)
+# fit model
+m5.1 <- map(
+  alist(
+    Divorce ~ dnorm(mu, sigma),
+    mu <- a + bA * MedianAgeMarriage.s,
+    a ~ dnorm(10, 10),
+    bA ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = d)
+
+# R code 5.2 
+# compute percentile interval of mean
+MAM.seq <- seq(from = -3, to = 3.5, length.out= 30) # why make a list of numbers instead of using the orignal data? 
+# because you want to get a precise prediction of the shaded area
+mu <- link(m5.1, data = data.frame(MedianAgeMarriage.s=MAM.seq))
+mu.PI <- apply(mu, 2, PI)
+
+# plot it all
+plot(Divorce ~ MedianAgeMarriage.s, data=d, col=rangi2)
+abline(m5.1)
+shade(mu.PI, MAM.seq)
+
+############ what if using the original data 
+mu.2 <- link(m5.1)
+mu.2.PI <- apply(mu.2, 2, PI)
+plot(Divorce ~ MedianAgeMarriage.s, data=d, col=rangi2)
+abline(m5.1)
+shade(mu.2.PI, d$MedianAgeMarriage.s)
+#############################################
+
+precis(m5.1) # how to inspect the result, read the result. 
+
+# R code 5.3
+d$Marriage.s <- (d$Marriage - mean(d$Marriage))/sd(d$Marriage) # standardize predictor values
+m5.2 <- map(
+  alist(
+    Divorce ~ dnorm(mu, sigma),
+    mu <- a + bR * Marriage.s,
+    a ~ dnorm(10, 10),
+    bR ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = d) # build the model
+
+MAM.seq <- seq(from = -3, to = 3.5, length.out= 30) # make a list of predictor values
+mu <- link(m5.2, data = data.frame(Marriage.s=MAM.seq)) # compute model values for each predictor values 
+?link
+data.frame(Marriage.s=MAM.seq) 
+mu
+mu.PI <- apply(mu, 2, PI) # compute 95% PI for model values  
+mu.PI
+
+# plot it all
+plot(Divorce ~ Marriage.s, data=d, col=rangi2) 
+# make a plot using data d with Divorce as y axis and Marrige.s as x axis
+abline(m5.2) 
+?abline
+shade(mu.PI, MAM.seq)
+?shade
+
+# R code 5.4
+m5.3 <- map(
+  alist(
+    Divorce ~ dnorm(mu, sigma),
+    mu <- a + bR*Marriage.s + bA * MedianAgeMarriage.s,
+    a ~ dnorm(10, 10),
+    bR ~ dnorm(0, 1),
+    bA ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), 
+  data = d )
+precis(m5.3)
+
+# R code 5.5
+plot(precis(m5.3)) # could not plot??? 
+
+# R code 5.6 predictor residual plot
+m5.4 <- map(
+  alist(
+    Marriage.s ~ dnorm(mu, sigma),
+    mu <- a + b*MedianAgeMarriage.s,
+    a ~ dnorm(0, 10),
+    b ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), 
+data = d)
+
+# R code 5.7
+# compute the residual by sbutracting the observed marriage rate in each
+# state from the predicted rate, based upon using age at marriage
+# compuate expected value at MAP, for each state
+mu <- coef(m5.4)['a'] + coef(m5.4)['b'] * d$MedianAgeMarriage.s
+mu
+# compute residual for each state
+mu.resid <- d$Marriage.s - mu
+d$Marriage.s
+mu.resid
+# R code 5.8
+plot(Marriage.s ~ MedianAgeMarriage.s, d, col=rangi2)
+abline(m5.4)
+# loop over states
+for (i in 1:length(mu.resid)) {
+  x <- d$MedianAgeMarriage.s[i]  # x loaction of line segment
+  y <- d$Marriage.s[i]  # observed endpoint of line segment
+  # draw the line segment
+  lines(c(x, x), c(mu[i], y), lwd=0.5, col=col.alpha("black", 0.7))
+} 
+
+?lines
+# R code 5.9
+# prepare new counterfactural data
+A.avg <- mean(d$MedianAgeMarriage.s) # mean of standard marriage age
+A.avg # a single value
+R.seq <- seq(from = -3, to = 3, length.out = 30) # 30 marriage rate values from -3 to 3
+R.seq
+pred.data <- data.frame( 
+  Marriage.s = R.seq,
+  MedianAgeMarriage.s=A.avg
+) # make a data frame using Marriage.s & MedianAgeMarrige.s
+pred.data
+# compute counterfactual mean divorce (mu)
+mu <- link(m5.3, data = pred.data) 
+# compute model values for each combination of predictor value (a constant marriage age)  
+###################### need to understand link more thouroughly ########################
+head(mu)
+dim(mu)
+m5.3
+mu.mean <- apply(mu, 2, mean) # find mean for mu
+mu.PI <- apply(mu, 2, PI) # 95% PI of mu 
+
+# simulate counterfactual divorce outcomes
+R.sim <- sim(m5.3, data = pred.data, n = 1e4) # difference between sim() and link() ????????
+# simulate 1e4 mu values based on model 5.3 using predictor values of pred.data (constant marriage age)
+head(R.sim)
+dim(R.sim)
+R.PI <- apply(R.sim, 2, PI)
+
+# display predictions, hiding raw data with type="n"
+plot(Divorce ~ Marriage.s, data = d, type="n") # what is Marriage.s 
+# d$Marriage.s <- (d$Marriage - mean(d$Marriage))/sd(d$Marriage) # $Marriage is Marriage rate
+mtext("MedianAgeMarriage.s=0")
+lines(R.seq, mu.mean) # 
+?lines
+shade(mu.PI, R.seq) # mu.PI is for the computed mean value?
+shade(R.PI, R.seq) # R.PI is for the predicted value? 
+
+# R code 5.10, do the same computation as R code 5.9
+# control for Marraige rate
+R.avg <- mean(d$Marriage.s)
+A.seq <- seq(from = -3, to = 3.5, length.out = 30)
+pred.data2 <- data.frame(
+  Marriage.s=R.avg,
+  MedianAgeMarriage.s=A.seq
+)
+
+mu <- link(m5.3, data = pred.data2)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI)
+
+A.sim <- sim(m5.3, data = pred.data2, n = 1e4)
+A.PI <- apply(A.sim, 2, PI)
+
+plot(Divorce ~ MedianAgeMarriage.s, data = d, type="n") 
+mtext("Marriage.s=0")
+lines(A.seq, mu.mean) 
+shade(mu.PI, A.seq) 
+shade(A.PI, A.seq) 
+
+# how to understand these two plots? 
+# posterior prediciton plots
+# R code 5.11
+# call link without specifying new data
+# so it uses original data
+mu <- link(m5.3)
+
+# summarize samples across cases
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI)
+
+# simulate observations
+# again no new data, so uses original data
+divorce.sim <- sim(m5.3, n = 1e4)
+divorce.PI <- apply(divorce.sim, 2, PI) # how these simulated data were used in the plot? 
+
+# R code 5.12 
+# plot predictions against observed. add a line to show perfect 
+# prediction and line segment for the confidence interval of each prediciton
+plot(mu.mean ~ d$Divorce, col=rangi2, ylim=range(mu.PI),
+     xlab="Observed divorce", ylab="Predicted divorce") # plot computed data
+mu.mean # 50 iterms
+mu # 1000 items, computed mu, default is 1000 items
+?link
+mu.PI # 50 items
+
+abline(a=0, b=1, lty=2) # a the intercept, b the slope
+?abline
+nrow(d) # 50 items
+for(i in 1:nrow(d))
+  lines(rep(d$Divorce[i],2), c(mu.PI[1,i], mu.PI[2,i]), 
+# for each data point, draw 5% and 95% confididence interval
+  col=rangi2)
+
+rep(d$Divorce[1],2)
+?rep
+mu.PI[1,1]
+mu.PI[2,1]
+c(mu.PI[1,1], mu.PI[2,1])
+mu.PI
+?lines
+
+# R code 5.13
+identify(x=d$Divorce, y=mu.mean, labels = d$Loc, cex=0.8)
+
+# R code 5.14
+# compute residuals
+divorce.resid <- d$Divorce - mu.mean
+divorce.resid # 50 items
+# get ordering by divorce rate
+o <- order(divorce.resid) 
+?order
+# make the plot
+dotchart(divorce.resid[o], labels = d$Loc[o], xlim = c(-6,5), cex = 0.6) 
+# make a dot chart using divorce resid according to order o 
+?dotchart
+abline(v =0, col=col.alpha("black", 0.2)) # draw a line at 0 
+?abline
+for (i in 1:nrow(d)){
+  j <- o[i] # which state in order
+  lines(d$Divorce[j]-c(mu.PI[1,j], mu.PI[2,j]), rep(i,2)) 
+  points(d$Divorce[j]-c(divorce.PI[1,j], divorce.PI[2,j]), rep(i,2), # the divorce.PI used here
+         pch=3, cex=0.6, col="red")      
+}
+
+o
+o[1]
+d$Divorce[13]-c(mu.PI[1,13], mu.PI[2,13])
+lines(d$Divorce[13]-c(mu.PI[1,13], mu.PI[2,13]))
+rep(1,2)
+
+# Note from class
+# why standardize... 
+
+################################## For 04/25/2016 #####################################
+
+# R code 5.16
+library(rethinking)
+data("milk")
+d <- milk
+str(d)
+
+# R code 5.17 check the simple bivariate regression between kilocalories & neocortex percent
+m5.5 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + bn*neocortex.perc,
+    a ~ dnorm(0, 100),
+    bn ~ dnorm(0, 1),
+    sigma ~ dunif(0, 1)
+  ), 
+data = d)
+
+# R code. 5.18
+d$neocortex.perc # missing data in this column
+
+# R code 5.19 make a new data frame w/ only complete cases in it
+dcc <- d[complete.cases(d),]
+complete.cases(d)
+dcc
+
+# R code 5.20 now check the regression with complete cases
+m5.5 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + bn*neocortex.perc,
+    a ~ dnorm(0, 100),
+    bn ~ dnorm(0, 1),
+    sigma ~ dunif(0, 1)
+  ), 
+  data = dcc)
+
+# R code 5.21 take a look at the quandratic approximate posterior
+precis(m5.5, digits = 3) # the 89% interval of the bn are on both sides of zero, so positive or negative??? 
+
+# R code 5.22 
+# a change from the smallest neocortex percent to the largest would result in an unexpected change of 
+coef(m5.5)["bn"]*(76-55)
+?"coef"
+
+# R code 5.23. plot the predicted mean and 89% interval for the mean to see how the distance on both sides of zero
+np.seq <- 0:100 # generate 101 numbers from 0 to 100 with interval of 1 
+np.seq
+pred.data <- data.frame(neocortex.perc=np.seq) # make a dataframe with the 101 numbers as neocortex percentage
+pred.data 
+
+mu <- link(m5.5, data = pred.data, n = 1e4) # compute linear model values for m5.5 using 101 numbers
+?link
+head(mu)
+m5.5
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI)
+nrow(mu.PI)
+
+plot(kcal.per.g ~ neocortex.perc, data=dcc, col=rangi2)
+lines(np.seq, mu.mean)
+lines(np.seq, mu.PI[1,], lty=2) # the lower 5.5% interval  
+lines(np.seq, mu.PI[2,], lty=2) # the upper 5.5% interval 
+?lines
+
+# R code 5.24 fit another bivariate regression, with the log of body mass as the predictor variable 
+dcc$log.mass <- log(dcc$mass) # log transform mass 
+min(dcc$log.mass)
+max(dcc$log.mass)
+
+# R code 5.25. fit the model
+m5.6 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + bm * log.mass,
+    a ~ dnorm(0, 100),
+    bm ~ dnorm(0, 1),
+    sigma ~ dunif(0, 1)
+  ),
+  data = dcc)
+precis(m5.6)
+
+# make a plot 
+np.seq <- -5:5 # generate 101 numbers from 0 to 100 with interval of 1 
+pred.data <- data.frame(log.mass=np.seq) # make a dataframe with the 101 numbers as neocortex percentage
+
+mu <- link(m5.6, data = pred.data, n = 1e4) # compute linear model values for m5.5 using 101 numbers
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI)
+
+plot(kcal.per.g ~ log.mass, data=dcc, col=rangi2)
+lines(np.seq, mu.mean)
+lines(np.seq, mu.PI[1,], lty=2) # the lower 5.5% interval  
+lines(np.seq, mu.PI[2,], lty=2) # the upper 5.5% interval 
+
+# 5.26 fit a multivaraite model 
+m5.7 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + bn*neocortex.perc + bm*log.mass,
+    a ~ dnorm(0, 100),
+    bn ~ dnorm(0, 1),
+    bm ~ dnorm(0, 1),
+    sigma ~ dunif(0, 1)
+  ), 
+  data = dcc)
+precis(m5.7)
+
+# R code 5.27
+mean.log.mass <- mean(log(dcc$mass)) # only use mean of the log.mass as the log.mass
+np.seq <- 0:100
+pred.data <- data.frame(
+  neocortex.perc = np.seq,
+  log.mass=mean.log.mass
+)
+
+mu <- link(m5.7, data = pred.data, n = 1e4)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI)
+
+plot(kcal.per.g ~ neocortex.perc, data=dcc, type="n")
+lines(np.seq, mu.mean)
+lines(np.seq, mu.PI[1,], lty=2)
+lines(np.seq, mu.PI[2,], lty=2)
+
+
+mean.neocortex.perc <- mean(dcc$neocortex.perc) # only use mean of the log.mass as the log.mass
+np.seq <- -5:5
+pred.data <- data.frame(
+  neocortex.perc = mean.neocortex.perc,
+  log.mass=np.seq
+)
+
+mu <- link(m5.7, data = pred.data, n = 1e4)
+mu.mean <- apply(mu, 2, mean)
+mu.PI <- apply(mu, 2, PI)
+
+plot(kcal.per.g ~ log.mass, data=dcc, type="n")
+lines(np.seq, mu.mean)
+lines(np.seq, mu.PI[1,], lty=2)
+lines(np.seq, mu.PI[2,], lty=2)
+
+# R code 5.28 simulate data in which two meaningful predictors act to mask one another
+N <- 100
+rho <- 0.7
+x_pos <- rnorm(N) # produce 100 numbers with normal distribution, mean of 0 and sd of 1
+
+x_neg <- rnorm(N, mean=rho*x_pos,
+               sd=sqrt(1-rho^2)) # produce 100 numbers with normal distribution (mean of )
+y <- rnorm(N, mean=x_pos- x_neg)
+d <- data.frame(y, x_pos, x_neg)
+d
+
+pairs(d)
+
+# R code 5.29 simulate heights and leg lengths of 100 individuals
+N <- 100
+height <- rnorm(N, 10, 2)
+leg_prop <- runif(N, 0.4, 0.5)
+leg_left <- leg_prop * height + 
+  rnorm(N, 0, 0.02)
+leg_right <- leg_prop * height + 
+  rnorm(N, 0, 0.02)
+
+d <- data.frame(height, leg_left, leg_right)
+
+# R code 5.30
+m5.8 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + bl*leg_left + br*leg_right,
+    a ~ dnorm(10, 100),
+    bl ~ dnorm(2, 10),
+    br ~ dnorm(2, 10),
+    sigma ~ dunif(0, 10)
+  ), 
+  data=d)
+precis(m5.8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
