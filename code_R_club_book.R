@@ -1336,7 +1336,8 @@ precis(m5.14)
 
 # Note from R club 
 # Discussion on plot 5.4 in the book 
-
+# I lost my code again!!! although it is fine this time!
+# remember not to checkout head on a branch next time!!! 
 
 
 
