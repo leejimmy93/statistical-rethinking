@@ -1334,13 +1334,118 @@ m5.14 <- map(
   data = d)
 precis(m5.14)
 
+<<<<<<< HEAD
 # Note from R club 
 # Discussion on plot 5.4 in the book 
 # I lost my code again!!! although it is fine this time!
 # remember not to checkout head on a branch next time!!! 
+=======
+##################### for 05/02/2016 ##############
 
+# R code 5.44
+library(rethinking)
+data(Howell1)
+d <- Howell1
+str(d)
 
+# R code 5.45, fit a model
+m5.15 <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- a + bm*male,
+    a ~ dnorm(178, 100),
+    bm ~ dnorm(0, 10),
+    sigma ~ dunif(0, 50)
+  ), 
+  data = d)
+precis(m5.15)
+plot(precis(m5.15))
 
+# R code 5.46, the posteiro distribution of male height
+post <- extract.samples(m5.15)
+mu.male <- post$a + post$bm
+PI(mu.male)
+
+# R code 5.47, re-parameterizing the model
+m5.15b <- map(
+  alist(
+    height ~ dnorm(mu, sigma),
+    mu <- af * (1-male) + am*male,
+    af ~ dnorm(178, 100),
+    am ~ dnorm(178, 100),
+    sigma ~ dunif(0, 50)
+  ), 
+  data = d)
+precis(m5.15b)
+precis(m5.15)
+
+# R code 5.48
+data(milk)
+d <- milk
+unique(d$clade)
+?unique
+>>>>>>> cc50bbdbef097fe2e07a9570be6ec992ffeb8fb8
+
+# R code 5.49, to create a dummy variable for the New World Monkey category
+d$clade.NWM <- ifelse(d$clade=="New World Monkey", 1, 0)
+?ifelse
+
+# R code 5.50, make two more dummy variables
+d$clade.OWM <- ifelse(d$clade == "Old World Monkey", 1, 0)
+d$clade.S <- ifelse(d$clade=="Strepsirrhine", 1, 0)
+
+d$clade.OWM
+d$clade.S
+
+# R code 5.51, fit the model
+m5.16 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a + b.NWM*clade.NWM + b.OWM*clade.OWM + b.S*clade.S,
+    a ~ dnorm(0.6, 10),
+    b.NWM ~ dnorm(0, 1),
+    b.OWM ~ dnorm(0, 1),
+    b.S ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), 
+  data = d)
+precis(m5.16)
+
+# R code 5.52, get the posterior distribution of the average milk energy in each category
+# sample posterior
+post <- extract.samples(m5.16)
+
+# compute averages for each category
+mu.ape <- post$a
+mu.NWM <- post$a + post$b.NWM
+mu.OWN <- post$a + post$b.OWM
+mu.S <- post$a + post$b.S
+
+# summarize using precis
+precis(data.frame(mu.ape, mu.NWM, mu.OWN, mu.S))
+
+# R code 5.53, differences between the two monkey groups
+diff.NWM.OWM <- mu.NWM - mu.OWN
+quantile(diff.NWM.OWM, probs=c(0.025, 0.5, 0.975))
+
+# R code 5.54
+d$clade_id <- coerce_index(d$clade)
+
+# R code 5.55
+m5.16_alt <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, sigma),
+    mu <- a[clade_id],
+    a[clade_id] ~ dnorm(0.6, 10),
+    sigma ~ dunif(0, 10)
+  ),
+  data = d)
+precis(m5.16_alt, depth = 2)
+
+# R code 5.62 
+data("cars")
+glimmer(dist ~ speed, data = cars)
+?glimmer
 
 
 
