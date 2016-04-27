@@ -1072,6 +1072,7 @@ lines(np.seq, mu.PI[2,], lty=2) # the upper 5.5% interval
 
 # R code 5.24 fit another bivariate regression, with the log of body mass as the predictor variable 
 dcc$log.mass <- log(dcc$mass) # log transform mass 
+# Q when to transform??? 
 min(dcc$log.mass)
 max(dcc$log.mass)
 
