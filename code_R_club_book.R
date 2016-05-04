@@ -1482,13 +1482,81 @@ m6.7 <- lm(brain ~ 1, data = d)
 d.new <- d[-i, ]
 
 library(rethinking)
-# R code 6.8 understand the below code??? 
+# R code 6.8 
 plot(brain ~ mass, d, col="slateblue")
 for (i in 1:nrow(d)){
   d.new <- d[-i, ]
   m0 <- lm(brain ~ mass, d.new)
   abline(m0, col=col.alpha("black", 0.5))
 }
+
+# R code 6.9
+p <- c(0.7, 0.15, 0.15)
+-sum(p*log(p))
+
+# R code 6.10
+# fit model with lm
+m6.1 <- lm(brain ~ mass, d)
+
+# compute deviance by cheating
+(-2) * logLik(m6.1)
+? logLik
+
+############## read the below codes laters... ################ 
+# R code 6.11 ## try to understand these codes afterwards... 
+# standardize the mass before fitting
+d$mass.s <- (d$mass- mean(d$mass))/sd(d$mass)
+m6.8 <- map(
+  alist(
+    brain ~ dnorm(mu, sigma),
+    mu <- a + b*mass.s
+  ), 
+  data = d,
+  start = list(a=mean(d$brain), b=0, sigma=sd(d$brain)),
+  method = "Nelder-Mead")
+
+# extract MAP estimates
+theta <- coef(m6.8)
+
+# compute deviance # read these code later... 
+dev <- (-2)*sum(dnorm(
+  d$brain,
+  mean = theta[1]+theta[2]*d$mass.s,
+  sd = theta[3],
+  log = TRUE))
+dev
+
+# R code 6.12 # read 6.12, 6.13, 6.14 afterwards... 
+N <- 20
+kseq <- 1:5
+dev <- sapply(kseq, function(k){
+  print(k);
+  r <- replicate(1e4, sim.train.test(N=N, k=k));
+  c(mean(r[1,]), mean(r[2,]), sd(r[1,]), sd(r[2,]))
+})
+
+# R code 6.13 
+r <- mcreplicate(1e4, sim.train.test(N=N, k=k), mc.cores = 4)
+
+# R code 6.14
+plot(1:5, dev[1,], ylim=c(min(dev[1:2,])-5), max(dev[1:2,]+10),
+    xlim=c(1,5.1), xlab="number of parameters", ylab="deviance",
+    pch=16, col=rangi2)
+
+mtext(concat("N=", N))
+points((1:5)+0.1, dev[2,])
+
+for (i in kseq){
+  pts_in <- dev[1,i]+c(-1,+1)*dev[3,i]
+  pts_out <- dev[2,i]+c(-1,+1)*dev[4,i]
+  lines(c(i,i), pts_in, col=rangi2)
+  line(c(i,i)+0.1, pts_out)
+}
+?sim.train.test
+
+
+
+
 
 
 
