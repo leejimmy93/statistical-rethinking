@@ -1447,23 +1447,48 @@ data("cars")
 glimmer(dist ~ speed, data = cars)
 ?glimmer
 
+#################### For 05/09/2016 #############
+# regulatory prior & information criteria 
+# R code 6.1
 
+sppnames <- c("afarensis","africanus","habilis","boisei",
+              "rudolfensis","ergaster","sapiens")
+brainvolcc <- c(438, 452, 612, 521, 752, 871, 1350)
+masskg <- c(37.0, 35.5, 34.5, 41.5, 55.5, 61.0, 53.5)
+d <- data.frame(species=sppnames, brain=brainvolcc, mass=masskg)
+d
 
+# R code 6.2
+m6.1 <- lm(brain ~ mass, data = d)
 
+# R code 6.3
+1 - var(resid(m6.1))/var(d$brain)
+summary(m6.1)
 
+# R code 6.4 
+m6.2 <- lm(brain ~ mass + I(mass^2), data = d)
+?I
 
+# R code 6.5
+m6.3 <- lm(brain ~ mass + I(mass^2) + I(mass^3), data = d)
+m6.4 <- lm(brain ~ mass + I(mass^2) + I(mass^3) + I(mass^4), data = d)
+m6.4 <- lm(brain ~ mass + I(mass^2) + I(mass^3) + I(mass^4) + I(mass^5), data = d)
+m6.4 <- lm(brain ~ mass + I(mass^2) + I(mass^3) + I(mass^4) + I(mass^5) + I(mass^6), data = d)
 
+# R code 6.6
+m6.7 <- lm(brain ~ 1, data = d)
 
+# R code 6.7
+d.new <- d[-i, ]
 
-
-
-
-
-
-
-
-
-
+library(rethinking)
+# R code 6.8 understand the below code??? 
+plot(brain ~ mass, d, col="slateblue")
+for (i in 1:nrow(d)){
+  d.new <- d[-i, ]
+  m0 <- lm(brain ~ mass, d.new)
+  abline(m0, col=col.alpha("black", 0.5))
+}
 
 
 
