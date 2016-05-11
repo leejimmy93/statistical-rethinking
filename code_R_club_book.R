@@ -1554,16 +1554,42 @@ for (i in kseq){
 }
 ?sim.train.test
 
+################ For 05/16/2016 ######################### 
 
+# need to understand all these codes... 
+# R code 6.15
+library(rethinking)
+data(cars)
+m <- map(
+  alist(
+    dist ~ dnorm(mu, sigma),
+    mu <- a + b*speed,
+    a ~ dnorm(0, 100),
+    b ~ dnorm(0, 10),
+    sigma ~ dunif(0, 30)
+  ), data = cars)
+post <- extract.samples(m, n = 1000)
 
+# need the log-likelihood of each observation i at each sample s from the posterior
+n_samples <- 1000
+ll <- sapply(1:n_samples, function(s){
+ mu <- post$a[s] + post$b[s]*cars$speed
+ dnorm(cars$dist, mu, post$sigma[s], log = TRUE)
+})
 
+# R code 6.17
+n_cases <- nrow(cars)
+lppd <- sapply(1:n_cases, function(i) log_sum_exp(ll[i,]-log(n_samples)))
 
+# R code 6.18
+pWAIC <- sapply(1:n_cases, function(i) var(ll[i,]))
 
+# R code 6.19 
+-2 * (sum(lppd) - sum(pWAIC))
 
-
-
-
-
+# R code 6.20
+waic_vec <- -2*(lppd-pWAIC)
+sqrt(n_cases*var(waic_vec))
 
 
 
