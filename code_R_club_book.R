@@ -1520,11 +1520,13 @@ theta <- coef(m6.8)
 
 # compute deviance # read these code later... 
 dev <- (-2)*sum(dnorm(
-  d$brain,
+  d$brain, 
   mean = theta[1]+theta[2]*d$mass.s,
   sd = theta[3],
   log = TRUE))
 dev
+?dnorm
+
 
 # R code 6.12 # read 6.12, 6.13, 6.14 afterwards... 
 N <- 20
