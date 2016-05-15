@@ -1557,8 +1557,6 @@ for (i in kseq){
 ?sim.train.test
 
 ################ For 05/16/2016 ######################### 
-
-# need to understand all these codes... 
 # R code 6.15 WAIC calculation 
 library(rethinking)
 data(cars)
@@ -1572,7 +1570,7 @@ m <- map(
   ), data = cars)
 post <- extract.samples(m, n = 1000)
 head(post)
-# need the log-likelihood of each observation i at each sample s from the posterior
+# R code 6.16 need the log-likelihood of each observation i at each sample s from the posterior
 n_samples <- 1000
 ll <- sapply(1:n_samples, function(s){
  mu <- post$a[s] + post$b[s]*cars$speed
