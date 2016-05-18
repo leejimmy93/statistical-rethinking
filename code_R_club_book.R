@@ -1647,6 +1647,74 @@ WAIC(m6.14)
 # R code 6.25
 plot(milk.models, SE=TRUE, dSE=TRUE)
 
+# R code 6.26
+diff <- rnorm(1e5, 6.7, 7.26) # generate 1e5 numbers w/ mean of 6.7 and stdv of 7.26
+sum(diff<0)/1e5 
+?rnorm # generates random deviates 
+rnorm(1e5, 6.7, 7.26)
+length(diff) 
+
+# R code 6.27
+coeftab(m6.11, m6.12, m6.13, m6.14)
+?coeftab # returns a table of model coefficients in ros and models in columns
+
+# R code 6.28
+plot(coeftab(m6.11, m6.12, m6.13, m6.14))
+?coeftab_plot
+
+# R code 6.29
+# compute counterfactual predictions
+# neocortex from 0.5 to 0.8
+nc.seq <- seq(0.5, 0.8, length.out = 30)
+d.predict <- list(
+  kcal.per.g = rep(0, 30), # empty outcome
+  neocortex = nc.seq, # sequence of neocortex
+  mass=rep(4.5, 30) # average mass
+)
+d.predict
+
+pred.m6.14 <- link(m6.14, data = d.predict)
+?link # compute model values for map samples
+dim(pred.m6.14)
+head(pred.m6.14)
+
+mu <- apply(pred.m6.14, 2, mean)
+mu.PI <- apply(pred.m6.14, 2, PI)
+mu
+length(mu)
+
+# plot it all
+plot(kcal.per.g ~ neocortex, d, col=rangi2)
+lines(nc.seq, mu, lty=2)
+lines(nc.seq, mu.PI[1,], lty=2) # x and y lengths differ??? 
+lines(nc.seq, mu.PI[2,], lty=2)
+
+mu.PI
+
+# R code 6.30
+milk.ensemble <- ensemble(m6.11, m6.12, m6.13, m6.14, data = d.predict)
+?ensemble # use link & sim for a list of map model fit to construct Akaike weighted ensemble of predictions
+
+mu <- apply(milk.ensemble$link, 2, PI)
+mu.PI < apply(milk.ensemble$link, 2, PI)
+lines(nc.seq, mu)
+shade(mu.PI, nc.seq)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
