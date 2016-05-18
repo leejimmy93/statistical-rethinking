@@ -1596,6 +1596,47 @@ pWAIC <- sapply(1:n_cases, function(i) var(ll[i,]))
 waic_vec <- -2*(lppd-pWAIC)
 sqrt(n_cases*var(waic_vec))
 
+################# For R club 05/23/2016 ##############################
+# R code 6.21 
+library(rethinking)
+
+data(milk)
+d <- milk[complete.cases(milk),]
+d$neocortex <- d$neocortex.perc / 100
+dim(d)
+
+# R code 6.22
+head(d)
+a.start <- mean(d$kcal.per.g) 
+a.start
+sigma.start <- log(sd(d$kcal.per.g))
+sigma.start
+?map # find mode of posterior distribution for arbitrary fixed effect models
+?alist
+?list # 
+?dnorm # 
+m6.11 <- map(
+  alist(
+    kcal.per.g ~ dnorm(a, exp(log.sigma)) # I forget how to intepret this... 
+  ), 
+  data = d, start = list(a=a.start, log.sigma = sigma.start))
+m6.12 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, exp(log.sigma)),
+    mu <- a + bn*neocortex
+  ), 
+  data = d, start = list(a=a.start, bn=0, log.sigma = sigma.start))
+m6.13 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, exp(log.sigma)),
+    mu <- a + bm*log(mass)
+  ), data = d, start = list(a=a.start, bm=0, log.sigma=sigma.start))
+m6.14 <- map(
+  alist(
+    kcal.per.g ~ dnorm(mu, exp(log.sigma)),
+    mu <- a + bn*neocortex + bm*log(mass)
+  ), data = d, start = list(a=a.start, bn=0, bm=0, log.sigma=sigma.start))
+
 
 
 
