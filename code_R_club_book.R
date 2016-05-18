@@ -1637,8 +1637,15 @@ m6.14 <- map(
     mu <- a + bn*neocortex + bm*log(mass)
   ), data = d, start = list(a=a.start, bn=0, bm=0, log.sigma=sigma.start))
 
+# R code 6.23
+library(rethinking)
+WAIC(m6.14)
 
+# R code 6.24
+(milk.models <- compare(m6.11, m6.12, m6.13, m6.14))
 
+# R code 6.25
+plot(milk.models, SE=TRUE, dSE=TRUE)
 
 
 
