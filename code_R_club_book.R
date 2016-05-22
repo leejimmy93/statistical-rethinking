@@ -1659,8 +1659,10 @@ coeftab(m6.11, m6.12, m6.13, m6.14)
 ?coeftab # returns a table of model coefficients in ros and models in columns
 
 # R code 6.28
-plot(coeftab(m6.11, m6.12, m6.13, m6.14))
+plot(coeftab(m6.11, m6.12, m6.13, m6.14)) # something wrong!!! 
 ?coeftab_plot
+# Error in as.double(y) : 
+# cannot coerce type 'S4' to vector of type 'double'
 
 # R code 6.29
 # compute counterfactual predictions
@@ -1699,8 +1701,6 @@ mu <- apply(milk.ensemble$link, 2, PI)
 mu.PI < apply(milk.ensemble$link, 2, PI)
 lines(nc.seq, mu)
 shade(mu.PI, nc.seq)
-
-
 
 
 
