@@ -1731,6 +1731,165 @@ dim(d.A0) #121 countries
 
 # R code 7.2 
 # African nations
+m7.1 <- map(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + bR*rugged,
+    a ~ dnorm(8, 100),
+    bR ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = d.A1)
+
+# Non African nations
+m7.2 <- map(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + bR*rugged,
+    a ~ dnorm(8, 100),
+    bR ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = d.A0)
+
+# plot the posterior predictions 
+# m7.1
+rugged.seq <- seq(0, 8, by=1)
+mu <- link(m7.1, data = data.frame(rugged = rugged.seq))
+mu.mean <- apply(mu, 2, mean)
+mu.HPDI <- apply(mu, 2, HPDI, prob=0.89)
+
+plot(log_gdp ~ rugged, data=d.A1, col=col.alpha(rangi2, 0.5))
+lines(rugged.seq, mu.mean)
+shade(mu.HPDI, rugged.seq)
+
+# m7.2 
+rugged.seq <- seq(0, 8, by=1)
+mu <- link(m7.2, data = data.frame(rugged = rugged.seq))
+mu.mean <- apply(mu, 2, mean)
+mu.HPDI <- apply(mu, 2, HPDI, prob=0.89)
+
+plot(log_gdp ~ rugged, data=d.A0, col=col.alpha(rangi2, 0.5))
+lines(rugged.seq, mu.mean)
+shade(mu.HPDI, rugged.seq)
+
+# R code 7.3 
+m7.3 <- map(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + bR*rugged,
+    a ~ dnorm(8, 100),
+    bR ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = dd)
+
+# R code 7.4
+m7.4 <- map(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + bR*rugged + bA*cont_africa, # go back to understand dummy variable... 
+    a ~ dnorm(8, 100),
+    bR ~ dnorm(0, 1),
+    bA ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = dd)
+
+# R code 7.5 
+compare(m7.3, m7.4) # understand the result, especially the standard error part... 
+
+# R code 7.6
+rugged.seq <- seq(-1, 8, by = 0.25)
+length(rugged.seq) # 37 
+# compute mu over samples, fixing cont_africa = 0
+mu.NotAfrica <- link(m7.4, data = data.frame(cont_africa=0, rugged==rugged.seq))
+
+# compute mu over samples, fixing cont_africa = 1
+mu.Africa <- link(m7.4, data = data.frame(cont_africa=1, rugged==rugged.seq))
+
+# summarize to means & intervals 
+mu.NotAfrica.mean <- apply(mu.NotAfrica, 2, mean)
+length(mu.NotAfrica.mean) # 234, why 234 
+mu.NotAfrica.PI <- apply(mu.NotAfrica, 2, PI, prob=0.97)
+mu.Africa.mean <- apply(mu.Africa, 2, mean)
+length(mu.Africa.mean) # 234 
+mu.Africa.PI <- apply(mu.Africa, 2, PI, prob=0.97)
+
+### how to plot figure 7.3 
+plot(log_gdp ~ rugged, data=dd, col=col.alpha(rangi2, 0.5))
+
+lines(rugged.seq, mu.Africa.mean)
+shade(mu.Africa.PI, rugged.seq)
+
+lines(rugged.seq, mu.NotAfrica.mean)
+shade(mu.NotAfrica.PI, rugged.seq)
+
+# R code 7.7 
+m7.5 <- map(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + gamma * rugged + bA*cont_africa,
+    gamma <- bR + bAR * cont_africa,
+    a ~ dnorm(8, 100),
+    bA ~ dnorm(0, 1),
+    bR ~ dnorm(0, 1),
+    bAR ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = dd)
+
+# R code 7.8
+compare(m7.3, m7.4, m7.5)
+
+# R code 7.9
+m7.5b <- map(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + bR*rugged + bAR*rugged*cont_africa + bA*cont_africa,
+    a ~ dnorm(8, 100),
+    bA ~ dnorm(0, 1),
+    bR ~ dnorm(0, 1),
+    bAR ~ dnorm(0, 1),
+    sigma ~ dunif(0, 10)
+  ), data = dd)
+
+# R code 7.10 
+rugged.seq <- seq(-1, 8, by = 0.25)
+
+mu.Africa <- link(m7.5, data = data.frame(cont_africa=1, rugged= rugged.seq))
+mu.Africa.mean <- apply(mu.Africa, 2, mean)
+mu.Africa.PI <- apply(mu.Africa, 2, PI, prob= 0.97)
+
+mu.NotAfrica <- link(m7.5, data = data.frame(cont_africa=0, rugged= rugged.seq))
+mu.NotAfrica.mean <- apply(mu.NotAfrica, 2, mean)
+mu.NotAfrica.PI <- apply(mu.NotAfrica, 2, PI, prob= 0.97)
+
+# plot Afican nations w/ regression
+d.A1 <- dd[dd$cont_africa==1,]
+
+plot(log(rgdppc_2000) ~ rugged, data=d.A1,
+     col=rangi2, ylab="log GDP year 2000",
+     xlab="Terrain Ruggedness Index")
+mtext("African nations", 3)
+lines(rugged.seq, mu.Africa.mean, col=rangi2)
+shade(mu.Africa.PI, rugged.seq, col = col.alpha(rangi2, 0.3))
+
+# plot non-Afican nations w/ regression
+d.A0 <- dd[dd$cont_africa==0,]
+
+plot(log(rgdppc_2000) ~ rugged, data=d.A0,
+     col="black", ylab="log GDP year 2000",
+     xlab="Terrain Ruggedness Index")
+mtext("Non-African nations", 3)
+lines(rugged.seq, mu.NotAfrica.mean, col=rangi2)
+shade(mu.NotAfrica.PI, rugged.seq)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
