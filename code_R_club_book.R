@@ -1707,14 +1707,30 @@ shade(mu.PI, nc.seq)
 
 # markdown file output options: ... cache=TRUE, dependency on the previous chunk of code... 
 
+######################## For 06/06/2016 ######################################
 
+# R code 7.1 
+library(rethinking)
+data(rugged)
+d <- rugged
 
+head(d)
+dim(d) #234 countries w/ 51 sets of data 
+# make log version of outcome
+d$log_gdp <- log(d$rgdppc_2000)
+dim(d) #234 countries w/ 52 sets of data 
+# extract countries w/ GDP data
+dd <- d[complete.cases(d$rgdppc_2000), ]
+dim(dd) # 170 countries 
 
+# split countries into Africa & non-Africa 
+d.A1 <- dd[dd$cont_africa==1, ] # Africa
+dim(d.A1) # 49 countries
+d.A0 <- dd[dd$cont_africa==0, ] # not Africa
+dim(d.A0) #121 countries 
 
-
-
-
-
+# R code 7.2 
+# African nations
 
 
 
