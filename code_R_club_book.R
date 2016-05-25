@@ -1821,7 +1821,7 @@ shade(mu.Africa.PI, rugged.seq)
 lines(rugged.seq, mu.NotAfrica.mean)
 shade(mu.NotAfrica.PI, rugged.seq)
 
-# R code 7.7 
+# R code 7.7 # using all data, add dummy variable, add linear interaction effect 
 m7.5 <- map(
   alist(
     log_gdp ~ dnorm(mu, sigma),
@@ -1849,7 +1849,7 @@ m7.5b <- map(
     sigma ~ dunif(0, 10)
   ), data = dd)
 
-# R code 7.10 
+# R code 7.10, calcualte predicted mean and PI using just subset of the data (Africa/NonAfrica)
 rugged.seq <- seq(-1, 8, by = 0.25)
 
 mu.Africa <- link(m7.5, data = data.frame(cont_africa=1, rugged= rugged.seq))
@@ -1860,7 +1860,8 @@ mu.NotAfrica <- link(m7.5, data = data.frame(cont_africa=0, rugged= rugged.seq))
 mu.NotAfrica.mean <- apply(mu.NotAfrica, 2, mean)
 mu.NotAfrica.PI <- apply(mu.NotAfrica, 2, PI, prob= 0.97)
 
-# plot Afican nations w/ regression
+# R code 7.11 
+# plot Afican nations w/ regression, plot using subset of data (Africa/NonAfrica)
 d.A1 <- dd[dd$cont_africa==1,]
 
 plot(log(rgdppc_2000) ~ rugged, data=d.A1,
@@ -1879,6 +1880,234 @@ plot(log(rgdppc_2000) ~ rugged, data=d.A0,
 mtext("Non-African nations", 3)
 lines(rugged.seq, mu.NotAfrica.mean, col=rangi2)
 shade(mu.NotAfrica.PI, rugged.seq)
+
+# R code 7.12 
+precis(m7.5)
+
+# R code 7.13, compute the posterior distribution of gamma
+post <- extract.samples(m7.5)
+gamma.Africa <- post$bR + post$bAR*1
+length(gamma.Africa)
+gamma.notAfrica <- post$bR + post$bAR*0
+
+# R code 7.14, get mean of gamma  
+mean(gamma.Africa)
+mean(gamma.notAfrica)
+
+# R code 7.15, full distribution of the slope within and outside of Africa
+dens(gamma.Africa, xlim=c(-0.5, 0.6), ylim=c(0, 5.5),
+     xlab="gamma", col=rangi2)
+dens(gamma.notAfrica, add = TRUE)
+
+# R code 7.16
+diff <- gamma.Africa - gamma.notAfrica
+sum(diff<0)/length(diff) 
+
+# R code 7.17
+# get min and max rugged values
+q.rugged <- range(dd$rugged)
+q.rugged
+q.rugged[1] 
+data.frame(rugged=q.rugged[1], cont_africa=0:1)
+# compute lines and confidence intervals
+mu.ruggedlo <- link(
+  m7.5, data = data.frame(rugged=q.rugged[1], cont_africa=0:1)) # just on 2 predictors? 
+head(mu.ruggedlo)
+dim(mu.ruggedlo) # 1000 2 
+mu.ruggedlo.mean <- apply(mu.ruggedlo, 2, mean)
+mu.ruggedlo
+head(mu.ruggedlo)
+mu.ruggedlo.mean
+mu.ruggedlo.PI <- apply(mu.ruggedlo, 2, PI)
+
+mu.ruggedi <- link(m7.5,
+                   data = data.frame(rugged=q.rugged[2], cont_africa=0:1))
+mu.ruggedi.mean <- apply(mu.ruggedi, 2, mean)
+mu.ruggedi.PI <- apply(mu.ruggedi, 2, PI)
+
+# plot it all, splitting points at median 
+med.r <- median(dd$rugged) # median 
+med.r
+ox <- ifelse(dd$rugged > med.r, 0.05, -0.05) # assign values to each country based on their 
+# rugged value compared to the median 
+?ifelse 
+ox
+length(ox)
+dim(dd)
+plot(dd$cont_africa + ox, log(dd$rgdppc_2000), # adding ox to each value differentiate 
+# them not only by african or not but also by whether their rugged value is below or above the median 
+     col=ifelse(dd$rugged>med.r, rangi2, "black"),
+     xlim=c(-0.25, 1.25), xaxt="n", ylab="log GDP year 2000",
+     xlab="Continent")
+dd$cont_africa + ox
+dd$cont_africa
+?plot # xaxt 
+
+axis(1, at=c(0,1), labels = c("others", "Africa"))
+?axis
+lines(0:1, mu.ruggedlo.mean, lty=2)
+?lines
+mu.ruggedlo.mean
+shade(mu.ruggedlo.PI, 0:1)
+lines(0:1, mu.ruggedi.mean, col=rangi2)
+shade(mu.ruggedi.PI, 0:1, col = col.alpha(rangi2, 0.25))
+
+# R code 7.18
+library(rethinking)
+data(tulips)
+d <- tulips
+str(d)
+
+# R code 7.19, build model using two predictors w/ and w/o interaction term
+m7.6 <- map(
+  alist(
+    blooms ~ dnorm(mu, sigma),
+    mu <- a + bW*water + bS*shade,
+    a ~ dnorm(0, 100),
+    bW ~ dnorm(0, 100),
+    bS ~ dnorm(0, 100),
+    sigma ~ dunif(0, 100)
+  ), data = d)
+
+m7.7 <- map(
+  alist(
+    blooms ~ dnorm(mu, sigma),
+    mu <- a + bW*water + bS*shade + bWS*water*shade,
+    a ~ dnorm(0, 100),
+    bW ~ dnorm(0, 100),
+    bS ~ dnorm(0, 100),
+    bWS ~ dnorm(0, 100),
+    sigma ~ dunif(0, 100)
+  ), data = d)
+
+# R code 7.20, fix the problem in the last the code 
+m7.6 <- map(
+  alist(
+    blooms ~ dnorm(mu, sigma),
+    mu <- a + bW*water + bS*shade,
+    a ~ dnorm(0, 100),
+    bW ~ dnorm(0, 100),
+    bS ~ dnorm(0, 100),
+    sigma ~ dunif(0, 100)
+  ), 
+  data = d,
+  method = "Nelder-Mead",
+  control=list(maxit=1e4)
+  )
+
+m7.7 <- map(
+  alist(
+    blooms ~ dnorm(mu, sigma),
+    mu <- a + bW*water + bS*shade + bWS*water*shade,
+    a ~ dnorm(0, 100),
+    bW ~ dnorm(0, 100),
+    bS ~ dnorm(0, 100),
+    bWS ~ dnorm(0, 100),
+    sigma ~ dunif(0, 100)
+  ), 
+  data = d,
+  method = "Nelder-Mead",
+  control=list(maxit=1e4)
+  )
+
+# R code 7.21 
+coeftab(m7.6, m7.7)
+?coeftab # return a table of model coeffecients in row and models in columns
+
+# R code 7.22
+compare(m7.6, m7.7)
+
+# R code 7.23, make centered versions of shade and water, just subtract the mean of the original
+# from each value
+d$shade.c <- d$shade - mean(d$shade)
+d$water.c <- d$water - mean(d$water)
+
+range(d$shade)
+range(d$shade.c)
+
+# R code 7.24, re-estimate the two regression models, using the new centered variables. 
+# add start list, because the very flat priors provide terrible random starting locations. 
+m7.8 <- map(
+  alist(
+    blooms ~ dnorm(mu, sigma),
+    mu <- a + bW*water.c + bS*shade.c,
+    a ~ dnorm(130, 100), # why change to 130 from 0? 
+    bW ~ dnorm(0, 100),
+    bS ~ dnorm(0, 100),
+    sigma ~ dunif(0, 100)
+  ), 
+  data = d,
+  start = list(a=mean(d$blooms), bS=0, bS=0, sigma=sd(d$blooms)) # start value VS prior, need to understand
+  # the contribution of the two 
+)
+
+m7.9 <- map(
+  alist(
+    blooms ~ dnorm(mu, sigma),
+    mu <- a + bW*water.c + bS*shade.c + bWS*water.c*shade.c,
+    a ~ dnorm(130, 100),
+    bW ~ dnorm(0, 100),
+    bS ~ dnorm(0, 100),
+    bWS ~ dnorm(0, 100),
+    sigma ~ dunif(0, 100)
+  ), 
+  data = d,
+  start = list(a=mean(d$blooms), bS=0, bS=0, bWS=0, sigma=sd(d$blooms))
+)
+coeftab(m7.8, m7.9)
+
+# R code 7.25
+k <- coef(m7.7) # uncentered model
+k
+k[1] + k[2]*2 + k[3]*2 + k[4]*2*2
+
+# R code 7.26
+k <- coef(m7.9) # centered model 
+k
+k[1] + k[2]*0 + k[3]*0 + k[4]*0*0
+
+# R code 7.27
+precis(m7.9)
+
+# R code 7.28, plot the implied predictions
+# make a plot window with three panels in a single row 
+par(mfrow=c(1,3)) # 1 row, 3 columns
+
+# loop over values of water.c and plot predictions
+shade.seq <- -1:1
+for ( w in -1:1){
+  dt <- d[d$water.c==w,]
+  plot(blooms ~ shade.c, data=dt, col=rangi2,
+       main=paste("water.c=", w), xaxp=c(-1,1,2), ylim=c(0, 362),
+       xlab="shade (centered)")
+  mu <- link(m7.9, data = data.frame(water.c=w, shade.c=shade.seq))
+  mu.mean <- apply(mu, 2, mean)
+  mu.PI <- apply(mu, 2, PI, prob= 0.97)
+  lines(shade.seq, mu.mean)
+  lines(shade.seq, mu.PI[1,], lty=2)
+  lines(shade.seq, mu.PI[2,], lty=2)
+}
+
+# R code 7.29
+m7.x <- lm(y ~ x + z + x*z, data = d)
+
+# R code 7.30
+m7.x <- lm(y ~ x*z, data = d)
+
+# R code 7.31, subtract one main effect
+m7.x <- lm(y~x + x*z -z, data = d) # can we apply this to our analysis? just consider the interaction effect? 
+
+# R code 7.32, three way interactions model design
+m7.x <- lm(y ~ x*z*w, data = d)
+
+# R code 7.33, expand a three-way interaction into a full set of terms
+x <- z <- w <- 1
+colnames(model.matrix(~x*z*w))
+?model.matrix # create a design matrix 
+
+
+
+
 
 
 
