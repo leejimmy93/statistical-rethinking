@@ -1700,7 +1700,7 @@ milk.ensemble <- ensemble(m6.11, m6.12, m6.13, m6.14, data = d.predict)
 dim(milk.ensemble$link)
 head(milk.ensemble$link)
 
-mu <- apply(milk.ensemble$link, 2, PI)
+mu <- apply(milk.ensemble$link, 2, mean)
 mu.PI < apply(milk.ensemble$link, 2, PI)
 lines(nc.seq, mu)
 shade(mu.PI, nc.seq)
@@ -2105,7 +2105,14 @@ x <- z <- w <- 1
 colnames(model.matrix(~x*z*w))
 ?model.matrix # create a design matrix 
 
+# note from R club
+# how to set the prior: plot the actual data, mean as the alpha and stdv from the plot as the stdv, beta as 0 makes more sense. 
+# regularizing prior, using broad prior 
 
+# x:z interaction  x*z main effects + interaction 
+
+?try # try an expression allowing error recorvery, can knit always.. "try-error"
+library(rethinking)
 
 
 
