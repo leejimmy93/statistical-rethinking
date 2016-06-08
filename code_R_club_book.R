@@ -2114,10 +2114,30 @@ colnames(model.matrix(~x*z*w))
 ?try # try an expression allowing error recorvery, can knit always.. "try-error"
 library(rethinking)
 
+########################### For 06/13/2016 #####################################
+library(rethinking)
 
+# R code 8.1
+num_weeks <- 1e5
+positions <- rep(0, num_weeks)
+current <- 10
+for (i in 1:num_weeks){
+  # record current position
+  positions[i] <- current
+  
+  # flip coin to generate proposal
+  proposal <- current + sample(c(-1,1), size = 1) # sampling to decide clock or counterclockwise
+  # now make sure he loops around the archipelago
+  if (proposal < 1) proposal <- 10  
+  if (proposal > 10) proposal < 1
+  
+  # move?
+  prob_move <- proposal/current # 
+  current <- ifelse(runif(1) < prob_move, proposal, current) 
+}
 
-
-
+runif(1) # pick a number from 0 to 1 randomly w/ a uniform distribution
+?ifelse # 
 
 
 
