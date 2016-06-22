@@ -2273,8 +2273,13 @@ m8.5 <- map2stan(
   chains = 2, iter = 4000, warmup = 1000)
 precis(m8.5)
 
+# get C++ compiler for Rstan installation. 
+Sys.setenv(MAKEFLAGS = "-j4") 
 
-
+fx <- inline::cxxfunction( signature(x = "integer", y = "numeric" ) , '
+    return ScalarReal( INTEGER(x)[0] * REAL(y)[0] ) ;
+                           ' )
+fx( 2L, 5 ) # should be 10
 
 
 
