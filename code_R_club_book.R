@@ -2212,6 +2212,68 @@ show(m8.1stan) # extract model info include model, DIC, and WAIC
 plot(m8.1stan)
 stancode(m8.1stan) # should print out the stan code for the ruggedness model 
 
+# R code 8.13, something wrong that I could not build the model... 
+y <- c(-1,1)
+m8.2 <- map2stan(
+  alist(
+    y ~ dnorm(mu, sigma),
+    mu <- alpha
+  ), 
+  data = list(y=y), start = list(alpha=0, sigma=1),
+  chains = 2, iter = 4000, wwarmup = 1000
+)
+
+library(rethinking)
+library('RcppEigen')
+
+# R code 8.14
+precis(m8.2)
+
+# R code 8.15
+m8.3 <- map2stan(
+  alist(
+    y ~ dnorm(mu, sigma),
+    mu <- alpha,
+    alpha ~ dnorm(1, 10),
+    sigma ~ dcauchy(0, 1)
+  ), 
+  data = list(y=y), start = list(alpha=0, sigma=1),
+  chains = 2, iter = 4000, warmup = 1000)
+precis(m8.3)
+
+# R code 8.16
+y <- rcauchy(1e4, 0, 5)
+mu <- sapply(1:length(y), function(i) sum(y[1:1])/i)
+plot(mu, type="l")
+
+# R code 8.17 
+y <- rnorm(100, mean = 0, sd = 1) 
+
+# R code 8.18
+m8.4 <- map2stan(
+  alist(
+    y ~ dnorm(mu, sigma),
+    mu <- a1+a2,
+    sigma ~ dcauchy(0, 1)
+  ), 
+  data = list(y=y), start = list(a1=0, a2=0, sigma=1),
+  chains = 2, iter = 4000, warmup = 1000)
+precis(m8.4)
+
+# R code 8.19
+m8.5 <- map2stan(
+  alist(
+    y~dnorm(mu, sigma),
+    mu <- a1 + a2,
+    a1 ~ dnorm(0, 10),
+    a2 ~dnorm(0, 10),
+    sigma ~ dcauchy(0, 1)
+  ), 
+  data = list(y=y), start = list(a1=0, a2=0, sigma=1),
+  chains = 2, iter = 4000, warmup = 1000)
+precis(m8.5)
+
+
 
 
 
