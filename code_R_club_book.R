@@ -2139,8 +2139,78 @@ for (i in 1:num_weeks){
 runif(1) # pick a number from 0 to 1 randomly w/ a uniform distribution
 ?ifelse # 
 
+########################## chapter 8 part 2 ###################################
 
+# R code 8.2 
+library(rethinking)
+data("rugged")
+d <- rugged
+d$log_gdp <- log(d$rgdppc_2000)
+dd <- d[complete.cases(d$rgdppc_2000), ]
 
+# R code 8.3, fit an interaction model with map
+m8.1 <- map(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + bR*rugged + bA*cont_africa + bAR*rugged*cont_africa,
+    a ~ dnorm(0, 100),
+    bR ~ dnorm(0, 10),
+    bA ~ dnorm(0, 10),
+    bAR ~ dnorm(0, 10),
+    sigma ~ dunif(0, 10)
+  ), data = dd)
+precis(m8.1)
+# Mean StdDev  5.5% 94.5%
+#   a      9.22   0.14  9.00  9.44
+# bR    -0.20   0.08 -0.32 -0.08
+# bA    -1.95   0.22 -2.31 -1.59
+# bAR    0.39   0.13  0.19  0.60
+# sigma  0.93   0.05  0.85  1.01
+
+# R code 8.4 
+dd.trim <- dd[, c("log_gdp", "rugged", "cont_africa")]
+str(dd.trim)
+
+library('BH')
+library('rstan')
+
+# R code 8.5 get samples from posterior distribution using rstan
+m8.1stan <- map2stan(
+  alist(
+    log_gdp ~ dnorm(mu, sigma),
+    mu <- a + bR*rugged + bA*cont_africa + bAR*rugged*cont_africa,
+    a ~ dnorm(0, 100),
+    bR ~ dnorm(0, 10),
+    bA ~ dnorm(0, 10),
+    bAR ~ dnorm(0, 10),
+    sigma ~ dcauchy(0, 2)
+  ), data = dd.trim) # I can't ge the model constructed... 
+?map2stan
+
+# R code 8.6
+precis(m8.1stan)
+
+# R code 8.7, run four independent MC for the model above, and to distribute them across 
+# seperate processors in your computer 
+m8.1stan_4chains <- map2stan(m8.1stan, chains = 4, cores = 4)
+precis(m8.1stan_4chains)
+
+# R code 8.8, pull out samples
+post <- extract.samples(m8.1stan)
+str(post)
+
+# R code 8.9 show correlations between parameters
+pairs(post)
+
+# R code 8.10
+pairs(m8.1stan)
+
+# R code 8.11
+show(m8.1stan) # extract model info include model, DIC, and WAIC 
+
+# R code 8.12 trace plot
+plot(m8.1stan)
+stancode(m8.1stan) # should print out the stan code for the ruggedness model 
 
 
 
