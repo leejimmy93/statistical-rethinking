@@ -1334,12 +1334,11 @@ m5.14 <- map(
   data = d)
 precis(m5.14)
 
-<<<<<<< HEAD
 # Note from R club 
 # Discussion on plot 5.4 in the book 
 # I lost my code again!!! although it is fine this time!
 # remember not to checkout head on a branch next time!!! 
-=======
+
 ##################### for 05/02/2016 ##############
 
 # R code 5.44
@@ -1384,7 +1383,6 @@ data(milk)
 d <- milk
 unique(d$clade)
 ?unique
->>>>>>> cc50bbdbef097fe2e07a9570be6ec992ffeb8fb8
 
 # R code 5.49, to create a dummy variable for the New World Monkey category
 d$clade.NWM <- ifelse(d$clade=="New World Monkey", 1, 0)
@@ -2184,7 +2182,7 @@ m8.1stan <- map2stan(
     bA ~ dnorm(0, 10),
     bAR ~ dnorm(0, 10),
     sigma ~ dcauchy(0, 2)
-  ), data = dd.trim) # I can't ge the model constructed... 
+  ), data = dd.trim) 
 ?map2stan
 
 # R code 8.6
