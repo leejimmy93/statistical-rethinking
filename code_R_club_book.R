@@ -2279,8 +2279,11 @@ fx <- inline::cxxfunction( signature(x = "integer", y = "numeric" ) , '
                            ' )
 fx( 2L, 5 ) # should be 10
 
-
-
+# chapter 9 
+# baysien theroeum = prior * likelihood / average likelihood 
+# during the previous several chapter, we were assuming that we have normal distribution of our data, but here in this 
+# chapter, we are using maximum entropy to get a sense of the likelihood, which is the data distribution. 
+# what's the advantage of map2stan compared to ANOVA? it tells you the posterior distribution although doesn't give you
 
 
 
