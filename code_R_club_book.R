@@ -2284,6 +2284,30 @@ fx( 2L, 5 ) # should be 10
 # during the previous several chapter, we were assuming that we have normal distribution of our data, but here in this 
 # chapter, we are using maximum entropy to get a sense of the likelihood, which is the data distribution. 
 # what's the advantage of map2stan compared to ANOVA? it tells you the posterior distribution although doesn't give you
+# p value 
+
+# R code 9.1, put each distribution of pebbles in a list 
+p <- list() 
+p$A <- c(0,0,10,0,0)
+p$B <- c(0,1,8,1,0)
+p$C <- c(0,2,6,2,0)
+p$D <- c(1,2,4,2,1)
+p$E <- c(2,2,2,2,2)
+
+# R code 9.2, normalize each distribution so that it is a probability distribution 
+p_norm <- lapply(p, function(q) q/sum(q))
+
+# R code 9.3, compute information entropy of each 
+(H <- sapply(p_norm, function(q)-sum(ifelse(q==0, 0, q*log(q)))))
+# The uncertainty contained in a probability distribution is the average log-probability of an event 
+
+# R code 9.4, the log number of ways per pebble to produce it 
+ways <- c(1, 90, 1260, 37800, 113400)
+logwayspp <- log(ways)/10
+logwayspp
+
+
+
 
 
 
