@@ -2285,6 +2285,52 @@ fx( 2L, 5 ) # should be 10
 # chapter, we are using maximum entropy to get a sense of the likelihood, which is the data distribution. 
 # what's the advantage of map2stan compared to ANOVA? it tells you the posterior distribution although doesn't give you
 
+# R code 9.5, build list of the candidate distribution
+p <- list()
+p[[1]] <- c(1/4, 1/4, 1/4, 1/4)
+p[[2]] <- c(2/6, 1/6, 1/6, 2/6)
+p[[3]] <- c(1/6, 2/6, 2/6, 1/6)
+p[[4]] <- c(1/8, 4/8, 2/8, 1/8)
+p
+
+# compute expected value of each 
+sapply(p, function(p) sum(p*c(0,1,1,2)))
+p
+
+# R code 9.6
+# compute entropy of each distribution 
+sapply(p, function(p) -sum(p*log(p)))
+
+# change probability of getting blue marble in each draw to be 0.7 
+p <- 0.7
+(A <- c((1-p)^2, p*(1-p), (1-p)*p, p^2))
+
+# R code 9.8, entropy for the distribution with p equals 0.7 
+-sum(A*log(A))
+
+# R code 9.9 
+sim.p <- function(G=1.4){
+  x123 <- runif(3) # generate 3 uniform random numbers
+  x4 <- ((G)*sum(x123)-x123[2]-x123[3])/(2/G) # solve for the relative value of the 4th value 
+  z <- sum(c(x123, x4)) 
+  p <- c(x123, x4)/z # probability 
+  list(H=-sum(p*log(p)), p=p) # compute entropy 
+}
+
+# R code 9.10, call the function 1e5 times with expected value of 1.4
+H <- replicate(1e5, sim.p(1.4))
+dens(as.numeric(H[1,]), adj = 0.1)
+
+# R code 9.11
+entropies <- as.numeric(H[1,]) # how was the entropy calculated? 
+distribution <- H[2,]
+
+# R code 9.12, get the largest observed entropy 
+max(entropies)
+
+# R code 9.12, the distribution with the largest entropy is 
+distribution[which.max(entropies)]
+?which.max
 
 
 
