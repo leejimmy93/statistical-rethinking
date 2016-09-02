@@ -2484,7 +2484,64 @@ precis(m10.4, depth = 2)
 
 # R code 10.17 
 post <- extract.samples(m10.4)
-str(post) # why I got 400 rows??? 
+str(post) # why I got 4000 rows??? 
+
+# R code 10.18 
+dens(post$a[,2])
+
+# R code 10.19 
+chimp <- 6 # select actor ID 
+d.pred <- list(
+  pulled_left = rep(0, 4), # empty outcome
+  prosoc_left = c(0,1,0,1), # right/left/right/left
+  condition =c(0,0,1,1), # control/control/partner/partner
+  actor = rep(chimp, 4)
+)
+d.pred
+
+link.m10.4 <- link(m10.4, data = d.pred)
+pred.p <- apply(link.m10.4, 2, mean)
+pred.p.PI <- apply(link.m10.4, 2, PI)
+
+plot(0, 0, type="n", xlab="prosoc_left/condition",
+     ylab="proportion pulled left", ylim=c(0, 1), xaxt="n",
+     xlim=c(1,4), yaxp=c(0,1,2))
+axis(1, at=1:4, labels = c("0/0", "1/0", "0/1", "1/1"))
+mtext(paste("actor", chimp))  ##### make good frame for plot 
+
+p <- by(d$pulled_left, 
+        list(d$prosoc_left, d$condition, d$actor), mean)
+
+by(d$pulled_left, 
+   list(d$prosoc_left, d$condition, d$actor), mean) # what's this??? 
+
+lines(1:4, as.vector(p[,,chimp]), col=rangi2, lwd=2)
+
+lines(1:4, pred.p) # add predicted data
+shade(pred.p.PI, 1:4) # predicted confidence interval 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
