@@ -2512,19 +2512,182 @@ mtext(paste("actor", chimp))  ##### make good frame for plot
 p <- by(d$pulled_left, 
         list(d$prosoc_left, d$condition, d$actor), mean)
 
+p[,,5]
+
 by(d$pulled_left, 
-   list(d$prosoc_left, d$condition, d$actor), mean) # what's this??? 
+   list(d$prosoc_left, d$condition, d$actor), mean) # calculate the mean of pulled_left for each 
+# combination of values in the three variables prosoc_left, condition, and actor 
 
 lines(1:4, as.vector(p[,,chimp]), col=rangi2, lwd=2)
 
 lines(1:4, pred.p) # add predicted data
 shade(pred.p.PI, 1:4) # predicted confidence interval 
 
+# R code 10.20 
+data("chimpanzees")
+d <- chimpanzees
+d.aggregated <- aggregate(d$pulled_left, 
+                          list(prosoc_left = d$prosoc_left, condition = d$condition, actor=d$actor),
+                          sum)
+d.aggregated
 
+# R code 10.21 
+m10.5 <- map(
+  alist(
+    x ~ dbinom(18, p),
+    logit(p) <- a + (bp + bp*condition)*prosoc_left, # understand the logit part... 
+    a ~ dnorm(0, 10), 
+    bp ~ dnorm(0, 10), 
+    bpC ~ dnorm(0, 10)
+  ), data = d.aggregated)
 
+precis(m10.5)
+precis(m10.3stan) ### m10.3 & m10.5 get the same result should, do I? 
 
+# R code 10.22 
+library(rethinking)
+data("UCBadmit")
+d <- UCBadmit
 
+# R code 10.23 
+d$male <- ifelse(d$applicant.gender=="male", 1, 0)
+m10.6 <- map(
+  alist(
+    admit ~ dbinom(applications, p), 
+    logit(p) <- a + bm*male, 
+    a ~ dnorm(0, 10), 
+    bm ~ dnorm(0, 10)
+  ), data = d)
 
+m10.7 <- map(
+  alist(
+    admit ~ dbinom(applications, p), 
+    logit(p) <- a, 
+    a ~ dnorm(0, 10)
+  ), data = d)
+
+# R code 10.24 
+compare(m10.6, m10.7)
+
+# R code 10.25 
+precis(m10.6)
+
+# R code 10.26 
+post <- extract.samples(m10.6)
+p.admit.male <- logistic(post$a + post$bm)
+p.admit.female <- logistic(post$a)
+diff.admit <- p.admit.male - p.admit.female
+quantile(diff.admit, c(0.025, 0.5, 0.975))
+
+dens(diff.admit)
+
+# R code 10.27 
+postcheck(m10.6, n=1e4) # plot posterior predictirve check # what the dots are???  
+tmp <- postcheck(m10.6, n=1e4)
+?postcheck
+tmp$mean
+plot(tmp$mean)
+# draw lines connecting points from same dept
+for (i in 1:6){
+  x <- 1 + 2*(i-1)
+  y1 <- d$admit[x]/d$applications[x]
+  y2 <- d$admit[x+1]/d$applications[x+1]
+  lines(c(x, x+1), c(y1, y2), col=rangi2, lwd=2)
+  text(x+0.5, (y1+y2)/2 + 0.05, d$dept[x], cex=0.8, col=rangi2)
+}
+
+# R code 10.28 
+# make index 
+d$dept_id <- coerce_index(d$dept)
+d$dept_id
+?coerce_index
+
+# model with unique intercept for each dept
+m10.8 <- map(
+  alist(
+    admit ~dbinom(applications, p), 
+    logit(p) <- a[dept_id], 
+    a[dept_id] ~ dnorm(0, 10)
+  ), data = d)
+
+# model with male differneces as well 
+m10.9 <- map(
+  alist(
+    admit ~ dbinom(applications, p), 
+    logit(p) <- a[dept_id] + bm*male, 
+    a[dept_id] ~ dnorm(0, 10), 
+    bm ~ dnorm(0, 10)
+  ), data = d)
+
+# R code 10.29 
+compare(m10.6, m10.7, m10.8, m10.9)
+
+# R code 10.30 
+precis(m10.9, depth = 2)
+
+# R code 10.27 
+postcheck(m10.9, n=1e4) # plot posterior predictirve check # what the dots are???  
+
+# draw lines connecting points from same dept
+for (i in 1:6){
+  x <- 1 + 2*(i-1)
+  y1 <- d$admit[x]/d$applications[x]
+  y2 <- d$admit[x+1]/d$applications[x+1]
+  lines(c(x, x+1), c(y1, y2), col=rangi2, lwd=2)
+  text(x+0.5, (y1+y2)/2 + 0.05, d$dept[x], cex=0.8, col=rangi2)
+}
+
+# R code 10.31 
+m10.9stan <- map2stan(m10.9, chains = 2, iter = 2500, warmup = 500)
+precis(m10.9stan, depth = 2)
+precis(m10.9, depth = 2)
+
+pairs(m10.9stan) # how to interpret the pairs plot??? 
+compare(m10.8, m10.9)
+compare(m10.8, m10.9, func = DIC) # doesn't work??? 
+
+# R code 10.32 
+m10.7glm <- glm(cbind(admit, reject) ~ 1, data = d, family = binomial)
+m10.6glm <- glm(cbind(admit, reject) ~ male, data = d, family = binomial)
+m10.8glm <- glm(cbind(admit, reject) ~ dept, data = d, family = binomial)
+m10.9glm <- glm(cbind(admit, reject) ~ male + dept, data = d, family = binomial)
+
+?glm
+
+# R code 10.33
+data("chimpanzees")
+m10.4glm <- glm(pulled_left ~ as.factor(actor) + prosoc_left * condition - condition, 
+                data=chimpanzees, family = binomial)
+
+# R code 10.34 
+glimmer(pulled_left ~ prosoc_left * condition - condition, 
+        data = chimpanzees, family = binomial)
+?glimmer # show the map/map2stan formula
+
+# R code 10.35 
+# outcome and predictor almost perfectly associated 
+y <- c(rep(0, 10), rep(1, 10))
+y
+x <- c(rep(-1, 9), rep(1, 11))
+x
+# fit binomial GLM
+m.bad <- glm(y ~ x, data = list(y=y, x=x), family = binomial)
+list(y=y, x=x)
+precis(m.bad)
+
+# R code 10.36 
+m.good <- map(
+  alist(
+    y ~ dbinom(1, p), 
+    logit(p) <- a + b*x, 
+    c(a, b) ~ dnorm(0, 10)
+  ), data = list(y=y, x=x))
+
+precis(m.good) # what's the difference between m.bad & m.good? 
+
+# R code 10.37 
+m.good.stan <- map2stan(m.good)
+pairs(m.good.stan)
 
 
 
