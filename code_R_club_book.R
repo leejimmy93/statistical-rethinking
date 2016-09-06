@@ -2417,13 +2417,13 @@ d.pred <- data.frame(
   prosoc_left = c(0,1,0,1), # right/left/right/left
   condition = c(0,0,1,1) # control/control/partner/partner
 )
-
+d.pred
 # build prediction ensemble 
 chimp.ensemble <- ensemble(m10.1, m10.2, m10.3, data = d.pred)
 ?ensemble
 class(chimp.ensemble)
 head(chimp.ensemble$link) # four outcomes for 4 different combinations  
-
+dim(chimp.ensemble$link)
 # summarize 
 pred.p <- apply(chimp.ensemble$link, 2, mean)
 pred.p.PI <- apply(chimp.ensemble$link, 2, PI)
@@ -2542,7 +2542,18 @@ m10.5 <- map(
   ), data = d.aggregated)
 
 precis(m10.5)
-precis(m10.3stan) ### m10.3 & m10.5 get the same result should, do I? 
+precis(m10.3) # very different likelihood 
+
+### posterior distribution is the same but with different likelihood. 
+post.1 <- extract.samples(m10.5)
+str(post.1) # why I got 4000 rows??? 
+
+post.2 <- extract.samples(m10.3)
+dens(post.2$a)
+#### 
+head(post.1)
+dim(post.1)
+dens(post.1$a)
 
 # R code 10.22 
 library(rethinking)
