@@ -2700,28 +2700,45 @@ precis(m.good) # what's the difference between m.bad & m.good?
 m.good.stan <- map2stan(m.good)
 pairs(m.good.stan)
 
+######## for 09/30/2016 ######################################
+# R code 10.38 
+y <- rbinom(1e5, 1000, 1/1000)
+c(mean(y), var(y))
 
+# R code 10.39 
+library(rethinking)
+data("Kline")
+d <- Kline
+d
 
+# R code 10.40
+d$log_pop <- log(d$population)
+d$contact_high <- ifelse(d$contact=="high", 1, 0)
 
+# R code 10.41 (don't understand dpois)
+m10.10 <- map(
+  alist(
+    total_tools ~ dpois(lambda),
+    log(lambda) <- a + bp * log_pop + 
+      bc * contact_high + bpc*contact_high*log_pop, 
+    a ~ dnorm(0, 100),
+    c(bp, bc, bpc) ~ dnorm(0, 1)
+  ), 
+  data = d)
 
+?dpois
+?dnorm
 
+# R code 10.42
+precis(m10.10, corr = T)
+plot(precis(m10.10))
 
+# R code 10.43
+post <- extract.samples(m10.10)
+lambda_high <- exp(post$a + post$bc + (post$bp + post$bpc)*8) # w/ contact, why multiply by 8??? 
+lambda_low <- exp(post$a + post$bp*8) # w/o contact  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+head(post)
 
 
 
