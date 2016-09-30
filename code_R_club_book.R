@@ -2740,13 +2740,116 @@ lambda_low <- exp(post$a + post$bp*8) # w/o contact
 
 head(post)
 
+# R code 10.44
+diff <- lambda_high - lambda_low
+sum(diff >0)/length(diff)
 
+# R code 10.45
+# no interaction 
+m10.11 <- map(
+  alist(
+    total_tools ~ dpois(lambda), # what is this??? 
+    log(lambda) <- a + bp*log_pop + bc*contact_high,
+    a ~ dnorm(0, 100),
+    c(bp,bc) ~ dnorm(0,1)
+  ), data = d)
 
+# R code 10.46 
+# no contact rate 
+m10.12 <- map(
+  alist(
+    total_tools ~ dpois(lambda),
+    log(lambda) <- a + bp*log_pop,
+    a ~ dnorm(0, 100),
+    bp ~ dnorm(0, 1)
+  ), data = d)
 
+# no log-population 
+m10.13 <- map(
+  alist(
+    total_tools ~ dpois(lambda),
+    log(lambda) <- a + bc*contact_high,
+    a ~ dnorm(0, 100),
+    bc ~ dnorm(0, 1)
+  ), data = d)
 
+# R code 10.47 
+# intercept only 
+m10.14 <- map(
+  alist(
+    total_tools ~ dpois(lambda),
+    log(lambda) <- a, 
+    a ~ dnorm(0, 100)
+  ), data = d)
 
+# compare all using WAIC 
+# adding n=1e4 for more stable WAIC estimates
+# will also plot the comparison 
+(island.compare <- compare(m10.10, m10.11, m10.12, m10.13, m10.14, n=1e4))
+plot(island.compare)
 
+# R code 10.48 (need to understand these codes)
+# make plot of raw data to begin 
+# point character (pch) indicates contact rate 
+pch <- ifelse(d$contact_high ==1, 16, 1)
+plot(d$log_pop, d$total_tools, col=rangi2, pch=pch, 
+     xlab="log-population", ylab="total tools")
 
+# sequence of log-population sizes to compute over 
+log_pop.seq <- seq(from=6, to=13, length.out = 30)
+
+# compute trend fro high contact islands
+d.pred <- data.frame(
+  log_pop = log_pop.seq,
+  contact_high = 1
+)
+
+lambda.pred.h <- ensemble(m10.10, m10.11, m10.12, data = d.pred)
+lambda.med <- apply(lambda.pred.h$link, 2, median)
+lambda.PI <- apply(lambda.pred.h$link, 2, PI)
+
+# plot predicted trend for high contact islands
+lines(log_pop.seq, lambda.med, col=rangi2)
+shade(lambda.PI, log_pop.seq, col = col.alpha(rangi2, 0.2))
+
+# compute trend fro low contact islands 
+d.pred <- data.frame(
+  log_pop = log_pop.seq,
+  contact_high = 0
+)
+
+lambda.pred.l <- ensemble(m10.10, m10.11, m10.12, data = d.pred)
+lamdda.med <- apply(lambda.pred.l$link, 2, median)
+lambda.PI <- apply(lambda.pred.l$link, 2, PI)
+
+# plot again 
+lines(log_pop.seq, lamdda.med, lty=2)
+shade(lambda.PI, log_pop.seq, col=col.alpha("black", 0.1))
+
+# R code 10.49 
+m10.10stan <- map2stan(m10.10, iter = 3000, warmup = 1000, chains = 4)
+precis(m10.10stan)
+pairs(m10.10stan)
+
+# R code 10.50 
+# construct centered predictor 
+d$log_pop_c <- d$log_pop - mean(d$log_pop)
+
+# re-estimate
+m10.10stan.c <- map2stan(
+  alist(
+    total_tools ~ dpois(lambda),
+    log(lambda) <- a + bp*log_pop_c + bc*contact_high + 
+      bcp*log_pop_c*contact_high,
+    a ~ dnorm(0, 10),
+    bp ~ dnorm(0, 1),
+    bc ~ dnorm(0, 1),
+    bcp ~ dnorm(0, 1)
+  ), 
+  data = d, iter = 3000, warmup = 1000, chains = 4)
+
+precis(m10.10stan.c)
+pairs(m10.10stan.c)
 
 
 
