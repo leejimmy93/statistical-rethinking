@@ -1671,7 +1671,7 @@ d.predict <- list(
   neocortex = nc.seq, # sequence of neocortex
   mass=rep(4.5, 30) # average mass
 )
-d.predict
+d.predict 
 
 pred.m6.14 <- link(m6.14, data = d.predict)
 ?link # compute model values for map samples
@@ -2364,6 +2364,8 @@ d <- chimpanzees
 
 ?chimpanzees
 # R code 10.2 
+
+head(d)
 m10.1 <- map(
   alist(
     pulled_left ~ dbinom(1, p),
@@ -2559,6 +2561,7 @@ dens(post.1$a)
 library(rethinking)
 data("UCBadmit")
 d <- UCBadmit
+head(d)
 
 # R code 10.23 
 d$male <- ifelse(d$applicant.gender=="male", 1, 0)
