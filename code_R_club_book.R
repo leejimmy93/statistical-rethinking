@@ -2702,6 +2702,7 @@ pairs(m.good.stan)
 
 ######## for 09/30/2016 ######################################
 # R code 10.38 
+library(rethinking)
 y <- rbinom(1e5, 1000, 1/1000)
 c(mean(y), var(y))
 
@@ -2725,9 +2726,10 @@ m10.10 <- map(
     c(bp, bc, bpc) ~ dnorm(0, 1)
   ), 
   data = d)
-
-?dpois
+ 
+?dpois #the possion distribution 
 ?dnorm
+?map 
 
 # R code 10.42
 precis(m10.10, corr = T)
@@ -2850,6 +2852,51 @@ m10.10stan.c <- map2stan(
 
 precis(m10.10stan.c)
 pairs(m10.10stan.c)
+
+# R code 10.51 
+num_days <- 30
+y <- rpois(num_days, 1.5)
+?rpois # simulate possion distribution 
+
+# R code 10.52
+num_weeks <- 4
+y_new <- rpois(num_weeks, 0.5*7)
+
+# R code 10.53 
+y_all <- c(y, y_new)
+exposure <- c(rep(1,30), rep(7,4))
+monastery <- c(rep(0,30), rep(1,4))
+d <- data.frame(y=y_all, days=exposure, monastery=monastery)
+head(d)
+
+# R code 10.54 
+# compute the offset 
+d$log_days <- log(d$days)
+
+# fit the model 
+m10.15 <- map(
+  alist(
+    y ~ dpois(lambda),
+    log(lambda) <- log_days + a + b*monastery,
+    a ~ dnorm(0, 100),
+    b ~ dnorm(0, 1)
+  ), data = d)
+
+# R code 10.55
+post <- extract.samples(m10.15)
+lambda_old <- exp(post$a)
+lambda_new <- exp(post$a + post$b)
+precis(data.frame(lambda_old, lambda_new))
+
+
+
+
+
+
+
+
+
+
 
 
 
