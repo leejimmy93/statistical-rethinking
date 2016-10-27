@@ -2958,20 +2958,23 @@ abline(h=logistic(median(post$a)), lty=2)
 # draw vertical dividers between tank densities 
 abline(v=16.5, lwd=0.5)
 abline(v=32.5, lwd=0.5)
+?abline
 text(8, 0, "small tanks")
 text(16+8, 0, "medium tanks")
 text(32+8, 0, "large tanks")
 
-# R code 12.6 
+# R code 12.6 (don't understand this part at all. )
 # show first 100 populations in the posterior 
 plot(NULL, xlim=c(-3, 4), ylim=c(0, 0.35), 
      xlab="log-odds survive", ylab="Density")
 for(i in 1:100)
   curve(dnorm(x, post$a[i], post$sigma[i]), add = T, 
-  col=col.alpha("black", 0.2))
+  col=col.alpha("black", 0.2))  
+
+?curve
 # sample 8000 imaginary tanks from the posterior distribution 
 sim_tanks <- rnorm(8000, post$a, post$sigma)
-
+?rnorm
 # transform to probability and visulize 
 dens(logistic(sim_tanks), xlab="probability survive")
 
