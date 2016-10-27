@@ -2944,11 +2944,12 @@ head(post$sigma)
 
 # compute median intercept for each tank 
 # also transform to probability with logistic 
-d$propsurv.est <- logistic(apply(post$a_tank, 2, median))
+d$propsurv.est <- logistic(apply(post$a_tank, 2, median)) # posterior median 
 # display raw proportional surviving in each tank 
 plot(d$propsurv, ylim=c(0,1), pch=16, xaxt="n",
      xlab="tank", ylab="proportion survival", col=rangi2)
 
+head(d)
 # overlay posteior median 
 points(d$propsurv.est)
 
@@ -2963,7 +2964,7 @@ text(8, 0, "small tanks")
 text(16+8, 0, "medium tanks")
 text(32+8, 0, "large tanks")
 
-# R code 12.6 (don't understand this part at all. )
+# R code 12.6 (don't understand this part at all.)
 # show first 100 populations in the posterior 
 plot(NULL, xlim=c(-3, 4), ylim=c(0, 0.35), 
      xlab="log-odds survive", ylab="Density")
