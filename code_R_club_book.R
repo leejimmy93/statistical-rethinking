@@ -2891,16 +2891,89 @@ lambda_old <- exp(post$a)
 lambda_new <- exp(post$a + post$b)
 precis(data.frame(lambda_old, lambda_new))
 
+############# for 10-28-2016 ###################
+# R code 12.1 
+library(rethinking)
+data("reedfrogs")
+d <- reedfrogs
+str(d)
+head(d)
+dens(d$surv)
 
+# R code 12.2
+# make the tank cluster variable 
+d$tank <- 1:nrow(d)
+head(d)
+d$density
 
+# fit 
+m12.1 <- map2stan(
+  alist(
+    surv ~ dbinom(density, p),  
+    logit(p) <- a_tank[tank],
+    a_tank[tank] ~ dnorm(0, 5)  
+  ), data = d)
 
+precis(m12.1, depth = 2) 
 
+logistic(0)
 
+# R code 12.3 
+m12.2 <- map2stan(
+  alist(
+    surv ~ dbinom(density, p),
+    logit(p) <- a_tank[tank],
+    a_tank[tank] ~ dnorm(a, sigma),
+    a ~ dnorm(0, 1), # ??? why normal distribution with these prior? 
+    sigma ~ dcauchy(0, 1) # why this cauchy distribution and why these prior? 
+  ), data = d, iter = 4000, chains = 4)
 
+?dcauchy
+precis(m12.2, depth = 2)
+# R code 12.4 
+compare(m12.1, m12.2)
 
+# R code 12.5 
+# extrac stan samples 
+post <- extract.samples(m12.2)
+head(post$a_tank)
+dim(post$a_tank) # 8000 48 
+dim(d) # 48 7 
+head(post$a)
+head(post$sigma)
 
+# compute median intercept for each tank 
+# also transform to probability with logistic 
+d$propsurv.est <- logistic(apply(post$a_tank, 2, median))
+# display raw proportional surviving in each tank 
+plot(d$propsurv, ylim=c(0,1), pch=16, xaxt="n",
+     xlab="tank", ylab="proportion survival", col=rangi2)
 
+# overlay posteior median 
+points(d$propsurv.est)
 
+# mark posterior median probability across tanks 
+abline(h=logistic(median(post$a)), lty=2)
+
+# draw vertical dividers between tank densities 
+abline(v=16.5, lwd=0.5)
+abline(v=32.5, lwd=0.5)
+text(8, 0, "small tanks")
+text(16+8, 0, "medium tanks")
+text(32+8, 0, "large tanks")
+
+# R code 12.6 
+# show first 100 populations in the posterior 
+plot(NULL, xlim=c(-3, 4), ylim=c(0, 0.35), 
+     xlab="log-odds survive", ylab="Density")
+for(i in 1:100)
+  curve(dnorm(x, post$a[i], post$sigma[i]), add = T, 
+  col=col.alpha("black", 0.2))
+# sample 8000 imaginary tanks from the posterior distribution 
+sim_tanks <- rnorm(8000, post$a, post$sigma)
+
+# transform to probability and visulize 
+dens(logistic(sim_tanks), xlab="probability survive")
 
 
 
