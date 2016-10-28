@@ -2979,6 +2979,10 @@ sim_tanks <- rnorm(8000, post$a, post$sigma)
 # transform to probability and visulize 
 dens(logistic(sim_tanks), xlab="probability survive")
 
+###################################
+# don't use dcauchy for experiment 
+################################### 
+
 
 
 
