@@ -2983,6 +2983,83 @@ dens(logistic(sim_tanks), xlab="probability survive")
 # don't use dcauchy for experiment 
 ################################### 
 
+########## for 11/04/2016 ###########
+library(rethinking)
+# R code 12.7 
+a <- 1.4
+sigma <- 1.5
+nponds <- 60 
+ni <- as.integer(rep(c(1, 10, 25, 35), each=15))
+
+# R code 12.8 
+a_pond <- rnorm(npond, mean = a, sd = sigma)
+a_pond
+
+# R code 1.29 
+dsim <- data.frame(pond=1:nponds, ni=ni, true_a=a_pond)
+dsim
+head(dsim)
+
+dsim$ni
+
+# R code 12.11 # don't understand this code 
+dsim$si <- rbinom(nponds, prob = logistic(dsim$true_a), size = dsim$ni)
+head(dsim)
+?rbinom # need to understand rbinom more 
+
+# R code 12.12 
+dsim$p_nopool <- dsim$si/dsim$ni
+dsim$ni # number of initial tadpoles 
+dsim$pond # pond index 
+dsim$true_a # logodds of survival probability for each pond 
+dsim$si # survival count
+
+head(dsim)
+tail(dsim)
+
+# R code 12.13 
+m12.3 <- map2stan(
+  alist(
+    si ~ dbinom(ni, p), 
+    logit(p) <- a_pond[pond], 
+    a_pond[pond] ~ dnorm(a, sigma),
+    a ~ dnorm(0, 1),
+    sigma ~ dcauchy(0, 1)
+  ), 
+  data = dsim, iter = 1e4, warmup = 1000)
+
+# R code 12.14 
+precis(m12.3, depth = 2)
+
+# R code 12.15 
+estimated.a_pond <- as.numeric(coef(m12.3)[1:60]) # the coefficient is the predicted value? use this directly? 
+dsim$p_partpool <- logistic(estimated.a_pond) 
+
+# R code 12.16 
+dsim$p_true <- logistic(dsim$true_a)
+
+# R code 12.17 
+nopool_error <- abs(dsim$p_nopool - dsim$p_true)
+partpool_error <- abs(dsim$p_partpool-dsim$p_true)
+
+# R code 12.18 
+plot(1:60, nopool_error, xlab="pond", ylab="absolute error", col=rangi2, pch=16)
+points(1:60, partpool_error)
+
+# R code 12.19 
+# code for map2stan, build map w/o compile again, see the book 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
