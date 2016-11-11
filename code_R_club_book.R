@@ -2991,8 +2991,8 @@ sigma <- 1.5
 nponds <- 60 
 ni <- as.integer(rep(c(1, 10, 25, 35), each=15))
 
-# R code 12.8 
-a_pond <- rnorm(npond, mean = a, sd = sigma)
+# R code 12.8, simulate the ponds
+a_pond <- rnorm(nponds, mean = a, sd = sigma)
 a_pond
 
 # R code 1.29 
@@ -3002,13 +3002,13 @@ head(dsim)
 
 dsim$ni
 
-# R code 12.11 # don't understand this code 
+# R code 12.11 # simulate survival numbers 
 dsim$si <- rbinom(nponds, prob = logistic(dsim$true_a), size = dsim$ni)
 head(dsim)
 ?rbinom # need to understand rbinom more 
 
 # R code 12.12 
-dsim$p_nopool <- dsim$si/dsim$ni
+dsim$p_nopool <- dsim$si/dsim$ni # survival rate for each pond 
 dsim$ni # number of initial tadpoles 
 dsim$pond # pond index 
 dsim$true_a # logodds of survival probability for each pond 
