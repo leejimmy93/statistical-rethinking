@@ -3049,10 +3049,295 @@ points(1:60, partpool_error)
 # R code 12.19 
 # code for map2stan, build map w/o compile again, see the book 
 
+################### For December 2nd ########################
+library(rethinking)
+data("chimpanzees")
+
+# R code 12.20 
+set.seed(1)
+y1 <- rnorm(1e4, 10, 1)
+set.seed(1)
+y2 <- 10+ rnorm(1e4, 0, 1)
+
+identical(y1, y2)
+
+# R code 12.21 
+d <- chimpanzees
+d$recipient <- NULL # get rid of NAs
+
+head(d)
+
+m12.4 <- map2stan(
+  alist(
+    pulled_left ~ dbinom(1, p), 
+    logit(p) <- a + a_actor[actor] + (bp + bpC*condition)*prosoc_left,
+    a_actor[actor] ~ dnorm(0, sigma_actor), 
+    a ~ dnorm(0, 10), 
+    bp ~ dnorm(0, 10), 
+    bpC ~ dnorm(0, 10), 
+    sigma_actor ~ dcauchy(0, 1)
+  ), 
+  data = d, warmup = 1000, iter = 5000, chains = 4, cores = 3)
+
+plot(m12.4)
+precis(m12.4)
+par(mfrow=c(1,1))
+dens(post$sigma_actor)
+ 
+# R code 12.22 
+post <- extract.samples(m12.4)
+total_a_actor <- sapply(1:7, function(actor) post$a + post$a_actor[,actor]) # get true varying intercept for each actor 
+round(apply(total_a_actor, 2, mean),2 ) # round to 2 digit 
+
+# Two types of clusters 
+# R code 12.23 
+# prep data 
+d$block_id <- d$block # name 'block' is reserved by Stan 
+
+m12.5 <- map2stan(
+  alist(
+    pulled_left ~ dbinom(1, p), 
+    logit(p) <- a + a_actor[actor] + a_block[block_id] + 
+      (bp + bpC*condition)*prosoc_left,
+    a_actor[actor] ~ dnorm(0, sigma_actor), 
+    a_block[block_id] ~ dnorm(0, sigma_block), 
+    a ~ dnorm(0, 10), 
+    bp ~ dnorm(0, 10), 
+    bpC ~ dnorm(0, 10), 
+    sigma_actor ~ dcauchy(0, 1), 
+    sigma_block ~ dcauchy(0, 1)
+  ), 
+  data = d, warmup = 1000, iter = 6000, chains = 4, cores = 3)
+plot(m12.5)
+par(mfrow=c(1,1))
+plot(precis(m12.5, depth = 2))
+
+# R code 12.25 
+post <- extract.samples(m12.5)
+dens(post$sigma_block, xlab="sigma", xlim=c(0,4))
+dens(post$sigma_actor, col=rangi2, lwd=2, add = T)
+text(2, 0.85, "actor", col = rangi2)
+text(0.75, 2, "block")
+
+# R code 12.26 
+compare(m12.4, m12.5)
+
+# R code 12.27 
+# compute and plot posterior predictions for actor number 2 
+chimp <- 2
+d.pred <- list(
+  prosoc_left = c(0,1,0,1), # right/left/right/left
+  condition = c(0,0,1,1), # control/control/partner/partner
+  actor=rep(chimp, 4)
+)
+d.pred
+link.m12.4 <- link(m12.4, data = d.pred)
+head(link.m12.4) # 4 combinations and 1000 trails 
+pred.p <- apply(link.m12.4, 2, mean) # posterior mean
+pred.p.PI <- apply(link.m12.4, 2, PI) # 5% confidence interval 
+
+# plot posterior predictions 
+plot(0,0, type="n", xlab="prosoc_left/condition", 
+     ylab="proportion pulled left", ylim=c(0,1), xaxt="n",
+     xlim=c(1,4))
+axis(1, at=1:4, labels = c("0/0", "1/0", "0/1", "1/1"))
+
+# plot raw data 
+p <- by(d$pulled_left, list(d$prosoc_left, d$condition, d$actor), mean)
+for (chimp in 1:7)
+lines(1:4, as.vector(p[,,chimp]), col=rangi2, lwd=1.5)
+
+# superimpose posterior predictions 
+lines(1:4, pred.p)
+shade(pred.p.PI, 1:4)
+
+# R code 12.28 
+post <- extract.samples(m12.4)
+str(post)
+dim(post$a_actor) #16000 samples and 7 actors 
+
+# R code 12.29 
+# plot the density for actor 5 
+dens(post$a_actor[,5])
+
+#### R code 12.30 & 12.29 are for posteior prediction w/o link function 
+# R code 12.30, construct posterior prediction, explain this code???, make a function to return p (probability to pull left)
+p.link <- function(prosoc_left, condition, actor){
+  logodds <- with(post, 
+                  a + a_actor[,actor] + (bp+bpC*condition)*prosoc_left
+  )
+  return(logistic(logodds))
+}
+?with
+
+# R code 12.31 
+prosoc_left <- c(0,1,0,1)
+condition <- c(0,0,1,1)
+pred.raw <- sapply(1:4, function(i) p.link(prosoc_left[i], condition[i],2 )) 
+pred.p <- apply(pred.raw, 2, mean)
+pred.p.PI <- apply(pred.raw, 2, PI)
+
+# plot to see whether get the same result 
+
+# plot posterior predictions 
+plot(0,0, type="n", xlab="prosoc_left/condition", 
+     ylab="proportion pulled left", ylim=c(0,1), xaxt="n",
+     xlim=c(1,4))
+axis(1, at=1:4, labels = c("0/0", "1/0", "0/1", "1/1"))
+
+# plot raw data 
+p <- by(d$pulled_left, list(d$prosoc_left, d$condition, d$actor), mean)
+for (chimp in 1:7)
+  lines(1:4, as.vector(p[,,chimp]), col=rangi2, lwd=1.5)
+
+# superimpose posterior predictions 
+lines(1:4, pred.p)
+shade(pred.p.PI, 1:4) # exactly the same result compare with using link function 
+
+# R code 12.32 
+d.pred <- list(
+  prosoc_left = c(0,1,0,1), 
+  condtion=c(0,0,1,1),
+  actor=rep(2,4)
+)
+d.pred
+
+# R code 12.33 
+# replace varying intercept samples with zeros 
+# 1000 samples by 7 actors 
+a_actor_zeros <- matrix(0, 1000, 7) # 1000 rows and 7 columns of 0 
+?matrix
+
+# R code 12.34 
+# fire up link 
+# note use of replace list 
+link.m12.4 <- link(m12.4, n=1000, data = d.pred,
+                   replace=list(a_actor=a_actor_zeros))
+
+# summarize and plot, which actor? new actor?  
+pred.p.mean <- apply(link.m12.4, 2, mean)
+pred.p.PI <- apply(link.m12.4, 2, PI, prob=0.8)
+plot(0,0, type="n", xlab="prosoc_left?condition",
+     ylab="proportion pulled left", ylim=c(0,1), xaxt="n",
+     xlim=c(1,4))
+axis(1,at=1:4, labels = c("0/1","1/0","0/1","1/1"))
+lines(1:4, pred.p.mean)
+shade(pred.p.PI, 1:4)
+
+# R code 12.35 
+# replace varying intercept samples with simulations 
+post <- extract.samples(m12.4) 
+post$sigma_actor
+a_actor_sims <- rnorm(7000, 0, post$sigma_actor) # 7000 samples with mean of 0 and sd of post$sigma_actor
+?rnorm
+length(a_actor_sims)
+a_actor_sims <- matrix(a_actor_sims, 1000, 7) # make this simulated data into matrix 
+dim(a_actor_sims)
+
+# R code 12.36, pass the simulated intercept into link, predition using simulated data from normal distribution 
+link.m12.4 <- link(m12.4, n = 1000, data = d.pred,
+                   replace=list(a_actor=a_actor_sims))
 
 
+# summarize and plot, which actor? simulated new actor from normal distribution?  
+pred.p.mean <- apply(link.m12.4, 2, mean)
+pred.p.PI <- apply(link.m12.4, 2, PI, prob=0.8)
+plot(0,0, type="n", xlab="prosoc_left?condition",
+     ylab="proportion pulled left", ylim=c(0,1), xaxt="n",
+     xlim=c(1,4))
+axis(1,at=1:4, labels = c("0/1","1/0","0/1","1/1"))
+lines(1:4, pred.p.mean)
+shade(pred.p.PI, 1:4)
+
+# R code 12.37 
+post <- extract.samples(m12.4)
+# simulate a new actor from the posterior and then compute the probability of pulling the left lever for each of the four trt
+sim.actor <- function(i){
+  sim_a_actor <- rnorm(1,0, post$sigma_actor[i])
+  P <- c(0,1,0,1)
+  C <- c(0,0,1,1)
+  p <- logistic(
+    post$a[i] + 
+      sim_a_actor + 
+      (post$bp[i] + post$bpC[i]*C)*P
+  )
+  return(p)
+}
+
+length(sim.actor(1)) 
+# 12.38 use the function made in 12.37 to simulate 50 actors 
+# empty plot 
+plot(0,0, type="n", xlab="prosoc_left?condition",
+     ylab="proportion pulled left", ylim=c(0,1), xaxt="n",
+     xlim=c(1,4))
+axis(1,at=1:4, labels = c("0/1","1/0","0/1","1/1"))
+
+# plot 50 simulated actors 
+for (i in 1:50){
+lines(1:4, sim.actor(i), col=col.alpha("black", 0.5))
+}
+
+### over dispersion????? don't understand, think we skipeed that chapter chapter 11 
+# R code 12.39 
+# prep data 
+data(Kline)
+d <- Kline
+head(d)
+
+d$logpop <- log(d$population)
+d$society <- 1:10
+
+# fit model 
+m12.6 <- map2stan(
+  alist(
+    total_tools ~ dpois(mu),
+    log(mu) <- a + a_society[society] + bp*logpop, 
+    a ~ dnorm(0, 10), 
+    bp ~ dnorm(0, 1), 
+    a_society[society] ~ dnorm(0, sigma_society),
+    sigma_society ~ dcauchy(0, 1)
+  ), 
+  data = d, iter = 4000, chains = 3
+)
+
+plot(m12.6)
+precis(m12.6, depth = 2)
+par(mfrow=c(1,1))
+pairs(m12.6)
+WAIC(m12.6)
+
+# R code 12.40 
+postcheck(m12.6)
+post <- extract.samples(m12.6)
+d.pred <- list(
+  logpop = seq(from=6, to = 14, length.out = 30),
+  society = rep(1,30)
+)
+a_society_sims <- rnorm(20000, 0, post$sigma_society)
+a_society_sims <- matrix(a_society_sims, 2000, 10)
+
+link.m12.6 <- link(m12.6, n = 2000, data = d.pred, 
+                   replace=list(a_society=a_society_sims))
 
 
+# display the raw data and the new prediction envelope 
+# plot raw data 
+plot(d$logpop, d$total_tools, col=rangi2, pch=16,
+     xlab="log population", ylab="total tools")
+
+# plot posteior median 
+mu.median <- apply(link.m12.6, 2, median)
+lines(d.pred$logpop, mu.median)
+
+# plot 97%, 89%, and 67% intervals (all prime numbers)
+mu.PI <- apply(link.m12.6, 2, PI, prob=0.97)
+shade(mu.PI, d.pred$logpop)
+
+mu.PI <- apply(link.m12.6, 2, PI, prob=0.89)
+shade(mu.PI, d.pred$logpop)
+
+mu.PI <- apply(link.m12.6, 2, PI, prob=0.67)
+shade(mu.PI, d.pred$logpop)
 
 
 
