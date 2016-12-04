@@ -3153,6 +3153,7 @@ shade(pred.p.PI, 1:4)
 
 # R code 12.28 
 post <- extract.samples(m12.4)
+?extract.samples
 str(post)
 dim(post$a_actor) #16000 samples and 7 actors 
 
@@ -3227,16 +3228,22 @@ shade(pred.p.PI, 1:4)
 # R code 12.35 
 # replace varying intercept samples with simulations 
 post <- extract.samples(m12.4) 
-post$sigma_actor
+length(post$sigma_actor)
+head(post$sigma_actor)
 a_actor_sims <- rnorm(7000, 0, post$sigma_actor) # 7000 samples with mean of 0 and sd of post$sigma_actor
+
 ?rnorm
 length(a_actor_sims)
 a_actor_sims <- matrix(a_actor_sims, 1000, 7) # make this simulated data into matrix 
 dim(a_actor_sims)
 
+
+d.pred
 # R code 12.36, pass the simulated intercept into link, predition using simulated data from normal distribution 
 link.m12.4 <- link(m12.4, n = 1000, data = d.pred,
                    replace=list(a_actor=a_actor_sims))
+
+
 
 
 # summarize and plot, which actor? simulated new actor from normal distribution?  
@@ -3339,6 +3346,11 @@ shade(mu.PI, d.pred$logpop)
 mu.PI <- apply(link.m12.6, 2, PI, prob=0.67)
 shade(mu.PI, d.pred$logpop)
 
+###### Note from R club 
+# nested classification/hierachy: eg flats within each shelf  
+# crossed classification/hierachy: eg colomns and rows in experiment design 
+
+# repeated measure...  
 
 
 
