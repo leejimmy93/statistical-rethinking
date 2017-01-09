@@ -2918,12 +2918,12 @@ precis(m12.1, depth = 2)
 
 logistic(0)
 
-# R code 12.3 
+# R code 12.3, a multilevel model 
 m12.2 <- map2stan(
   alist(
     surv ~ dbinom(density, p),
     logit(p) <- a_tank[tank],
-    a_tank[tank] ~ dnorm(a, sigma),
+    a_tank[tank] ~ dnorm(a, sigma), 
     a ~ dnorm(0, 1), # ??? why normal distribution with these prior? 
     sigma ~ dcauchy(0, 1) # why this cauchy distribution and why these prior? 
   ), data = d, iter = 4000, chains = 4)
