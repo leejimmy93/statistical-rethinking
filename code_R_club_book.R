@@ -3352,6 +3352,232 @@ shade(mu.PI, d.pred$logpop)
 
 # repeated measure...  
 
+######## For 01-27-2017 ##################### 
+library(rethinking)
+
+# R code 13.1 
+a <- 3.5 # average morning wait time
+b <- (-1) # average difference afternnon wait time
+sigma_a <- 1 # std dev in intercepts
+sigma_b <- 0.5 # std dev in slopes
+rho <- (-0.7) # correlation between intercepts and slopes
+
+# R code 13.2 
+Mu <- c(a, b)
+
+# R code 13.3 
+cov_ab <- sigma_a*sigma_b*rho
+Sigma <- matrix(c(sigma_a^2, cov_ab, cov_ab, sigma_b^2), ncol = 2)
+
+Sigma
+
+# R code 13.4 
+matrix(c(1,2,3,4), nrow = 2, ncol = 2)
+
+# R code 13.5, don't quite understand...############## ???????? 
+sigmas <- c(sigma_a, sigma_b) # standard deviations
+sigmas
+Rho <- matrix(c(1, rho, rho, 1), nrow = 2) # correlation matrix 
+Rho
+
+# now matrix multiply to get covarance matrix 
+Sigma <- diag(sigmas) %*% Rho %*% diag(sigmas)
+diag(sigmas)
+Sigma
+
+# R code 13.6 
+N_cafes <- 20 # number of cafes 
+
+# R code 13.7 
+library(MASS)
+set.seed(5) # used to replicate examples
+vary_effects <- mvrnorm(N_cafes, Mu, Sigma)
+vary_effects
+
+# R code 13.8 
+a_cafe <- vary_effects[,1]
+b_cafe <- vary_effects[,2]
+
+# R code 13.9 
+plot(a_cafe, b_cafe, col=rangi2, 
+     xlab="intercepts (a_cafe)", ylab="slopes (b_cafe)")
+# overlay population distribution 
+# install.packages("ellipse")
+library("ellipse")
+for (i in c(0.1, 0.3, 0.5, 0.8, 0.99))
+  lines(ellipse(Sigma, centre = Mu, level=l), col=col.alpha("black", 0.2)) # not work for some reason... and don't understand 
+
+# R code 13.10, simulate robot visit to cafes and collecting data 
+N_visits <- 10 # number of visit 
+N_visits
+afternoon <- rep(0:1, N_visits*N_cafes/2) # robot visit to cafes, 20 in total, 10 visit to each, 1 indicate
+# in the afternoon, 0 indicate in the morning. 
+afternoon
+length(afternoon) # 200 
+cafe_id <- rep(1:N_cafes, each=N_visits) # repeat 10 times of each cafe 
+cafe_id[1]
+
+mu <- a_cafe[cafe_id] + b_cafe[cafe_id]*afternoon # generate average waiting time for each cafe? 
+# what this code is doing? 
+sigma <- 0.5 # std dev within cafes 
+wait <- rnorm(N_visits*N_cafes, mu, sigma) # simulate wait time based using mu and sigma 
+d <- data.frame(cafe=cafe_id, afternoon=afternoon, wait=wait) # make this into a dataframe
+head(d) 
+tail(d)
+
+# R code 13.11
+R <- rlkjcorr(1e4, K=2, eta = 2) # 1e4 elements, 2 dimention, and with 2 to control the shape of distribution 
+length(R) 
+R[,1,2]
+dim(R)
+class(R) # array in R 
+?rlkjcorr # LKJ correlation matrix probability density 
+dens(R[,1,2], xlab="correlation") # don't understand this R[,1,2] thing... 
+
+# R code 13.12 
+m13.1 <- map2stan(
+  alist(
+    wait ~ dnorm(mu, sigma), # likelihood
+    mu <- a_cafe[cafe] + b_cafe[cafe]*afternoon, # linear model
+    c(a_cafe,b_cafe)[cafe] ~ dmvnorm2(c(a,b), sigma_cafe, Rho), # population of varying effects, don't quite
+    # understand this code, where is the covariance matrix??? 
+    a ~ dnorm(0, 10), 
+    b ~ dnorm(0, 10), 
+    sigma_cafe ~ dcauchy(0, 2), 
+    sigma ~ dcauchy(0, 2), 
+    Rho ~ dlkjcorr(2) # prior for covariance 
+  ), 
+  data = d, 
+  iter = 5000, warmup = 2000, chains = 2)
+
+# covariance VS. correlation
+stancode(m13.1)
+precis(m13.1)
+
+# R code 13.13, examine the posterior correlation between intercept and slopes 
+post <- extract.samples(m13.1)
+dens(post$Rho[,1,2])
+
+# R code 13.14 
+# compute unpooled estimates directly from data 
+a1 <- sapply(1:N_cafes, 
+             function(i) mean(wait[cafe_id==i & afternoon==0])) # for each cafe, get the mean waiting time 
+# in the morning 
+
+b1 <- sapply(1:N_cafes, 
+             function(i) mean(wait[cafe_id==i & afternoon==1])) - a1
+# get the waiting time for each cafe in the afternoon 
+
+# extract posterior means of partially pooled estimates 
+post <- extract.samples(m13.1)
+length(post)
+class(post)
+head(post[[1]])
+
+a2 <- apply(post$a_cafe, 2, mean) # get the mean of intercept 
+b2 <- apply(post$b_cafe, 2, mean) # mean of slope 
+
+# plot both and connect with lines 
+plot(a1, b1, xlab="intercept", ylab="slope",
+     pch=16, col=rangi2, ylim=c(min(b1)-0.1, max(b1)+0.1),
+     xlim=c(min(a1)-0.1, max(a1)+0.1)) # make a plot of simulated data intecept and slope? 
+points(a2, b2, pch=1) # add posterior intercept and slope 
+for (i in 1:N_cafes) lines(c(a1[i], a2[i]), c(b1[i],b2[i])) # connect simulated data and posterior 
+
+# R code 13.15, superimpose the contours of the population 
+# compute posterior mean bivariate Gaussian 
+Mu_est <- c(mean(post$a), mean(post$b)) 
+Mu_est # mu for intercept and slope 
+rho_est <- mean(post$Rho[,1,2])
+rho_est # what is this ???? 
+sa_est <- mean(post$sigma_cafe[,1])
+sa_est # mean of stdv of intercept 
+sb_est <- mean(post$sigma_cafe[,2])
+# mean of stdv of slope 
+cov_ab <- sa_est*sb_est*rho_est
+# ???? what is this ? 
+Sigma_est <- matrix(c(sa_est^2, cov_ab, cov_ab, sb_est^2), ncol = 2)
+Sigma_est # correlation matrix???
+
+### rho_est VS sigma_est????????? need to ask...  
+# draw contours 
+library(ellipse)
+for (i in c(0.1, 0.3, 0.5, 0.8, 0.99))
+  lines(ellipse(Sigma_est, centre = Mu_est, level = l),
+        col=col.alpha("black", 0.2)) # not be able to draw this though... 
+
+
+# R code 13.16 # on outcome scale 
+# convert varying effects to waiting times 
+wait_morning_1 <- (a1) # average waiting time in the morning intercept 
+wait_afternnon_1 <- (a1+b1) # average waiting time in the afternnon  
+wait_morning_2 <- (a2) # waiting time in the morning, partially pooled 
+# a for intercept, b for slope, a1,b1 from simulated data, no pooling, a2,b2 from partially pooled data 
+wait_afternnon_2 <- (a2+b2) # average waiting time in the afternoon, partially pooled  
+length(wait_afternnon_1)
+length(wait_afternnon_2)
+
+# R code 13.17 
+library(rethinking)
+data("UCBadmit")
+d <- UCBadmit
+d$male <- ifelse(d$applicant.gender=="male", 1,0)
+d$dept_id <- coerce_index(d$dept)
+
+# R code 13.18 
+m13.2 <- map2stan(
+  alist(
+    admit ~ dbinom(applications, p), 
+    logit(p) <- a_dept[dept_id] + bm*male, 
+    a_dept[dept_id] ~ dnorm(a, sigma_dept), 
+    a ~ dnorm(0, 10), 
+    bm ~ dnorm(0,1), 
+    sigma_dept ~ dcauchy(0,2)
+  ), 
+  data = d, warmup = 500, iter = 4500, chains = 3)
+
+precis(m13.2, depth = 2) 
+
+# R code 13.19, fit the model 
+m13.3 <- map2stan(
+  alist(
+    admit ~ dbinom(applications, p), 
+    logit(p) <- a_dept[dept_id] + 
+                bm_dept[dept_id]*male, 
+    c(a_dept, bm_dept)[dept_id] ~ dmvnorm2(c(a,bm), sigma_dept, Rho), 
+    a ~ dnorm(0, 10), 
+    bm ~ dnorm(0,1), 
+    sigma_dept ~ dcauchy(0,2),
+    Rho ~ dlkjcorr(2)
+  ), 
+  data = d, warmup = 1000, iter = 5000, chains = 4, cores = 3)
+
+# R code 13.20 
+precis(m13.3, depth = 2)
+plot(precis(m13.3, par=c("a_dept","bm_dept"), depth = 2)) # doesn't work... 
+
+# R code 13.21, fit the model that ignores gender 
+m13.4 <- map2stan(
+  alist(
+    admit ~ dbinom(applications, p), 
+    logit(p) <- a_dept[dept_id], 
+    a_dept[dept_id] ~ dnorm(a, sigma_dept), 
+    a ~ dnorm(0, 10), 
+    sigma_dept ~ dcauchy(0,2)
+  ), 
+  data = d, warmup = 500, iter = 4500, chains = 3)
+
+precis(m13.4, depth = 2) 
+compare(m13.2, m13.3, m13.4)
+
+
+
+
+
+
+
+
+
 
 
 
