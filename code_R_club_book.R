@@ -3570,13 +3570,105 @@ m13.4 <- map2stan(
 precis(m13.4, depth = 2) 
 compare(m13.2, m13.3, m13.4)
 
+########## for 02_03_2017 ########################### 
+# R code 13.22
+library(rethinking)
+data("chimpanzees")
+d <- chimpanzees
+d$recipient <- NULL
+d$block_id <- d$block
+head(d)
 
+m13.6 <- map2stan(
+  alist(
+    # likelihood 
+    pulled_left ~ dbinom(1, p), # likelihood 
+    
+    # linear model 
+    logit(p) <- A + (BP + BPC*condition)*prosoc_left, # linear model 
+    A <- a + a_actor[actor] + a_block[block_id], 
+    BP <- bp + bp_actor[actor] + bp_block[block_id],
+    BPC <- bpc + bpc_actor[actor] + bpc_block[block_id],
+    
+    # adaptive priors 
+    c(a_actor, bp_actor, bpc_actor)[actor] ~ 
+      dmvnorm2(0, sigma_actor, Rho_actor), # covariant matrix 
+    c(a_block, bp_block, bpc_block)[block_id] ~ 
+      dmvnorm2(0, sigma_block, Rho_block),
+      
+    # fixed priors 
+    c(a,bp,bpc) ~ dnorm(0, 1),
+    sigma_actor ~ dcauchy(0, 2), 
+    sigma_block ~ dcauchy(0, 2), 
+    Rho_actor ~ dlkjcorr(4), 
+    Rho_block ~ dlkjcorr(4)
+  ), data = d, iter = 5000, warmup = 1000, chains = 3, cores = 3)
 
+# R code 12.23 
+m13.6NC <- map2stan(
+  alist(
+    # likelihood 
+    pulled_left ~ dbinom(1, p), # likelihood 
+    
+    # linear model 
+    logit(p) <- A + (BP + BPC*condition)*prosoc_left, # linear model 
+    A <- a + a_actor[actor] + a_block[block_id], 
+    BP <- bp + bp_actor[actor] + bp_block[block_id],
+    BPC <- bpc + bpc_actor[actor] + bpc_block[block_id],
+    
+    # adaptive priors 
+    c(a_actor, bp_actor, bpc_actor)[actor] ~ 
+      dmvnormNC(sigma_actor, Rho_actor), # covariant matrix, no 0 here compared the last map2stan model  
+    c(a_block, bp_block, bpc_block)[block_id] ~ 
+      dmvnormNC(sigma_block, Rho_block),
+    
+    # fixed priors 
+    c(a,bp,bpc) ~ dnorm(0, 1),
+    sigma_actor ~ dcauchy(0, 2), 
+    sigma_block ~ dcauchy(0, 2), 
+    Rho_actor ~ dlkjcorr(4), 
+    Rho_block ~ dlkjcorr(4)
+  ), data = d, iter = 5000, warmup = 1000, chains = 3, cores = 3)
 
+precis(m13.6, depth = 2)
+precis(m13.6NC, depth = 2)
 
+# R code 13.24 
+# extract n_eff values for each model 
+neff_c <- precis(m13.6, 2)@output$n_eff # don't understand this code, discuss with Julin  
+neff_nc <- precis(m13.6NC,2)@output$n_eff
 
+# plot distributions 
+boxplot(list('m13.6'=neff_c, 'm13.6NC'=neff_nc),
+        ylab="effective samples", xlab="model")
 
+WAIC(m13.6NC)
+WAIC(m13.6)
 
+# R code 13.25 
+precis(m13.6NC, depth = 2, pars = c("sigma_actor", "sigma_block"))
+
+# R code 13.26 
+p <- link(m13.6NC)
+str(p)
+
+# R code 13.27 
+m12.5 <- map2stan(
+alist(
+  pulled_left ~ dbinom(1, p), 
+  logit(p) <- a + a_actor[actor] + a_block[block_id] + 
+    (bp + bpC*condition)*prosoc_left,
+  a_actor[actor] ~ dnorm(0, sigma_actor), 
+  a_block[block_id] ~ dnorm(0, sigma_block), 
+  a ~ dnorm(0, 10), 
+  bp ~ dnorm(0, 10), 
+  bpC ~ dnorm(0, 10), 
+  sigma_actor ~ dcauchy(0, 1), 
+  sigma_block ~ dcauchy(0, 1)
+), 
+data = d, warmup = 1000, iter = 6000, chains = 4, cores = 3)
+
+compare(m13.6NC, m12.5)
 
 
 
