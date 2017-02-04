@@ -3670,8 +3670,14 @@ data = d, warmup = 1000, iter = 6000, chains = 4, cores = 3)
 
 compare(m13.6NC, m12.5)
 
-
-
+# note: analogous to our data.... 
+# chapter 12: multiple intercept, random effect on the intercept 
+# chapter 13 section 1 & 2: multiple slope, random effect on the beta (treatment effect)
+# chapter 13 section 3: more than two varying effect, random effect on two varing beta... (two treatments effect on many 
+# different genotypes, the effect of each treatment and their interaction are different for each gentype)
+# when to use multiple intercept, multiple slopes... 
+# when use BRMS to report plot and result, use fitted().... 
+# use predict() to report result from lmer & BRMS... 
 
 
 
