@@ -3679,6 +3679,175 @@ compare(m13.6NC, m12.5)
 # when use BRMS to report plot and result, use fitted().... 
 # use predict() to report result from lmer & BRMS... 
 
+############## For 02-10-2017 ################ 
+# R code 13.29 
+# load the distance matrix 
+library(rethinking)
+data("islandsDistMatrix")
+
+# display short column names, so fits on screen 
+Dmat <- islandsDistMatrix
+colnames(Dmat) <- c("Ml", "Ti", "SC", "Ya", "Fi", "Tr", "Ch", "Mn", "To", "Ha")
+round(Dmat, 1)
+
+# R code 13.30 
+# linear 
+curve(exp(-1*x), from = 0, to = 4, lty=2, 
+      xlab = "distance", ylab = "correlation")
+
+?curve: # Draws a curve corresponding to a function over the interval [from, to].  
+exp(-4)
+# squared 
+curve(exp(-1*x^2), add = T)
+
+# R code 13.31 
+data("Kline2") # load the ordinary data, now with coordicates
+d <- Kline2
+d$society <- 1:10 # index observations
+
+m13.7 <- map2stan(
+  alist(
+    total_tools ~ dpois(lambda),
+    log(lambda) <- a + g[society] + bp*logpop,
+    g[society] ~ GPL2(Dmat, etasq, rhosq, 0.01), 
+    a ~ dnorm(0, 10), 
+    bp ~ dnorm(0, 1), 
+    etasq ~ dcauchy(0, 1), 
+    rhosq ~ dcauchy(0, 1)
+  ), 
+  data = list(
+    total_tools = d$total_tools,
+    logpop = d$logpop, 
+    society = d$society,
+    Dmat = islandsDistMatrix), 
+warmup = 2000, iter = 1e4, chains = 4)
+
+# R code 13.32 
+precis(m13.7, depth = 2)
+
+head(d)
+d$society
+d$logpop
+d$total_tools
+
+library(rethinking)
+data("Kline")
+d <- Kline
+d
+
+# R code 10.40
+d$log_pop <- log(d$population)
+d$contact_high <- ifelse(d$contact=="high", 1, 0)
+
+# R code 10.41 (don't understand dpois)
+m10.10 <- map(
+  alist(
+    total_tools ~ dpois(lambda),
+    log(lambda) <- a + bp * log_pop + 
+      bc * contact_high + bpc*contact_high*log_pop, 
+    a ~ dnorm(0, 100),
+    c(bp, bc, bpc) ~ dnorm(0, 1)
+  ), 
+  data = d)
+
+?dpois #the possion distribution 
+?dnorm
+?map 
+
+# R code 10.42
+precis(m10.10, corr = T)
+
+# R code 13.33 
+post <- extract.samples(m13.7)
+
+# plot the posterior median coviance function 
+curve(median(post$etasq) * exp(-median(post$rhosq)*x^2), from = 0, to = 10,
+      xlab = "distance (thousand km)", ylab = "covariance", ylim=c(0,1),
+      yaxp=c(0,1,4), lwd=2) 
+
+# plot 100 functions sampled from posterior 
+for(i in 1:100)
+  curve(post$etasq[i]*exp(-post$rhosq[i]*x^2), add = T,
+        col=col.alpha("black", 0.2))
+
+# R code 13.34 
+# compute posterior median covariance among societies 
+K <- matrix(0, nrow = 10, ncol = 10) 
+K
+for (i in 1:10)
+  for (j in 1:10)
+    K[i,j] <- median(post$etasq) * 
+              exp(-median(post$rhosq) * islandsDistMatrix[i,j]^2) # why all multiply??? 
+K
+diag(K) <- median(post$etasq) + 0.01 # adding the constant extra coviance beyound eta when i=j  
+K 
+
+# convert K to a correlation matrix 
+# convert to correlation matrix 
+Rho <- round(cov2cor(K), 2) # two digit numbers 
+# add row/col names for convenience
+colnames(Rho) <- c("Ml", "Ti", "SC", "Ya", "Fi", "Tr", "Ch", "Mn", "To", "Ha")
+rownames(Rho) <- colnames(Rho)
+Rho
+
+# R code 13.36 
+# scale point size to logpop
+psize <- d$log_pop / max(d$log_pop)
+psize <- exp(psize*1.5)-2
+
+# plot raw data and labels
+plot(d$lon2, d$lat, xlab="longitude", ylab="latitute", 
+     col=rangi2, cex=psize, pch=16, xlim=c(-50, 30))
+
+labels <- as.character(d$culture)
+text(d$lon2, d$lat, labels = labels, cex = 0.7, pos = c(2,4,3,3,4,1,3,2,4,2))
+
+# overlay lines shaded by Rho 
+for (i in 1:10)
+  for (j in 1:10)
+    if (i < j)
+      lines(c(d$lon2[i],d$lon2[j]), c(d$lat[i], d$lat[j]),
+            lwd=2, col=col.alpha("black", Rho[i,j]^2)) 
+# understand the code... 
+
+# R code 13.37 
+# compute posterior median relationship, ignoring distance 
+logpop <-seq(6, 14, length.out = 30)
+lambda <- sapply(logpop.seq, function(lp) exp(post$a + post$bp*lp))
+lambda.median <- apply(lambda, 2, median)
+lamda.PI80 <- apply(lambda, 2, PI, prob=0.8)
+
+# plot raw data and labels 
+plot(d$logpop, d$total_tools, col=rangi2, cex=psize, pch=16, 
+     xlab="log population", ylab="total tools")
+text(d$logpop, d$total_tools, labels = labels, cex = 0.7, 
+     pos=c(4,3,4,2,2,1,4,4,4,2))
+
+# display posterior predictions 
+lines(logpop.seq, lambda.median, lty=2)
+lines(logpop.seq, lambda.PI80[1,],lty=2)
+lines(logpop.seq, lamdda.PI80[2,],lty=2)
+
+# overlay correlations 
+for (i in 1:10)
+  for (j in 1:10)
+    if (i < j)
+      lines(c(d$logpop[i], d$logpop[j]),
+            c(d$total_tools[i], d$total_tools[j]),
+            lwd=2, col=col.alpha("black", Rho[i,j]^2))
+
+# understand the above code, and see how to add lines 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
