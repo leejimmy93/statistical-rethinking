@@ -3642,7 +3642,7 @@ neff_nc <- precis(m13.6NC,2)@output$n_eff
 boxplot(list('m13.6'=neff_c, 'm13.6NC'=neff_nc),
         ylab="effective samples", xlab="model")
 
-WAIC(m13.6NC)
+WAIC(m13.6NC) 
 WAIC(m13.6)
 
 # R code 13.25 
