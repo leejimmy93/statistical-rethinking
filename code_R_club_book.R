@@ -3623,7 +3623,7 @@ m13.6NC <- map2stan(
       dmvnormNC(sigma_block, Rho_block),
     
     # fixed priors 
-    c(a,bp,bpc) ~ dnorm(0, 1),
+    c(a,bp,bpc) ~ dnorm(0, 1), 
     sigma_actor ~ dcauchy(0, 2), 
     sigma_block ~ dcauchy(0, 2), 
     Rho_actor ~ dlkjcorr(4), 
@@ -3707,6 +3707,8 @@ curve(exp(-1*x^2), add = T)
 # R code 13.31 
 data("Kline2") # load the ordinary data, now with coordicates
 d <- Kline2
+head(Kline2)
+Kline2
 d$society <- 1:10 # index observations
 
 m13.7 <- map2stan(
@@ -3775,7 +3777,6 @@ K <- matrix(0, nrow = 10, ncol = 10)
 K
 for (i in 1:10)
   for (j in 1:10)
-    K[i,j] <- median(post$etasq) * 
               exp(-median(post$rhosq) * islandsDistMatrix[i,j]^2) # why all multiply??? 
 K
 diag(K) <- median(post$etasq) + 0.01 # adding the constant extra coviance beyound eta when i=j  
