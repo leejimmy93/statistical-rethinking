@@ -3850,6 +3850,109 @@ for (i in 1:10)
 
 # understand the above code, and see how to add lines  
 
+########### for 02-23-2017 ########################## 
+# R code 14.1 
+# simulate a pancake and return randomly ordered sides (come back to understand the code)
+sim_pancake <- function(){
+  pancake <- sample(1:3, 1) # sample a pancake from 1 to 3
+  sides <- matrix(c(1,1,1,0,0,0),2,3)[,pancake] # defines 3 pancakes, on B/B, one U/U, one B/U 
+  sample(sides) # sample 
+}
+
+sample(1:3, 1) # take 1 sample from 1:3 
+tmp1 <- matrix(c(1,1,1,0,0,0),2,3) # make a matrix with 2 colomns and 3 rows, these are all the sides 
+tmp <- matrix(c(1,1,1,0,0,0),2,3)[,2]
+sample(tmp) 
+
+# sim 10,000 pancakes 
+pancakes <- replicate(1e4, sim_pancake())
+up <- pancakes[1,]
+down <- pancakes[2,]
+
+# compute proportion 1/1 (BB) out of all 1/1 and 1/0 
+num_11_10 <- sum(up==1)
+num_11 <- sum(up==1 & down==1)
+num_11/num_11_10
+
+# R code 14.2 
+library(rethinking)
+data("WaffleDivorce")
+d <- WaffleDivorce
+head(d)
+dim(d)
+
+# points 
+plot(d$Divorce ~ d$MedianAgeMarriage, ylim=c(4,15),
+     xlab="Median age marriage", ylab="Divorce rate")
+
+# standard errors (don't understand the code)
+for (i in 1:nrow(d)){
+  ci <- d$Divorce[i] + c(-1,1)*d$Divorce.SE[i] # postive & minus stdv 
+  x <- d$MedianAgeMarriage[i]
+  lines(c(x,x), ci)
+}
+
+# R code 14.3 
+dlist <- list(
+  div_obs = d$Divorce,
+  div_sd = d$Divorce.SE,
+  R = d$Marriage,
+  A = d$MedianAgeMarriage
+) # make a list 
+dlist
+
+m14.1 <- map2stan(
+  alist(
+    div_est ~ dnorm(mu,sigma), # outcome parameter also get a second role as the unknown mean of
+    # another distribution, one that "predicts" the observed measurement 
+    mu <- a + bA*A + bR*R,
+    div_obs ~ dnorm(div_est, div_sd), # the uncertainly in measurement inluences the regression
+    # parameters in the linear model, and the regression parameters in the linear model also 
+    # influence the uncertainty in the measurement. 
+    a ~ dnorm(0, 10),
+    bA ~ dnorm(0, 10),
+    bR ~ dnorm(0, 10),
+    sigma ~ dcauchy(0, 2.5)
+  ), 
+  data = dlist, 
+  start = list(div_est=dlist$div_obs), # start at the observed value for each state 
+  WAIC = FALSE, iter = 5000, warmup = 1000, chains = 2, cores = 2, 
+  control=list(adapt_delat=0.95) # stan will work harder during warmup and potentially sample more
+  # efficiently. 
+) ###### crash 
+
+# R code 14.4 
+precis(m14.1, depth = 2) # not able to build the model... 
+
+# R code 14.5 
+dlist <- list(
+  div_obs = d$Divorce,
+  div_sd = d$Divorce.SE,
+  mar_obs = d$Marriage, 
+  mar_sd = d$Marriage.SE,
+  A = d$MedianAgeMarriage
+)
+
+m14.2 <- map2stan(
+  alist(
+    div_est ~ dnorm(mu, sigma),
+    mu <- a + bA*A + bR*mar_est[i],
+    div_obs ~ dnorm(div_est, div_sd),
+    mar_ons ~ dnorm(mar_est, mar_sd),
+    a ~ dnorm(0, 10),
+    bA ~ dnorm(0, 10),
+    bR ~ dnorm(0, 10), 
+    sigma ~ dcauchy(0, 2.5)
+  ), 
+  data = dlist, 
+  start = list(div_est=dlist$div_obs, mar_est=dlist$mar_obs),
+  WAIC = F, iter = 5000, warmup = 1000, chains = 3, cores = 3, 
+  control=list(adapt_delta=0.95))
+
+
+
+
+
 
 
 
