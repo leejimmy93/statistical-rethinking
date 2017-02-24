@@ -15,7 +15,6 @@ p_grid <- seq(from = 0, to = 1, length.out = 100)
 p_grid
 # define prior
 prior <- rep(2, 100)
-prior <- ifelse(p_grid < 0.5, 1, 2) # does 0 & 1 matter or not? 
 # prior <- exp(-5*abs(p_grid - 0.5))
 help("ifelse")
 # log(exp(3))
@@ -3879,6 +3878,8 @@ library(rethinking)
 data("WaffleDivorce")
 d <- WaffleDivorce
 head(d)
+d$Divorce.SE
+d$Marriage.SE
 dim(d)
 
 # points 
@@ -3917,7 +3918,7 @@ m14.1 <- map2stan(
   data = dlist, 
   start = list(div_est=dlist$div_obs), # start at the observed value for each state 
   WAIC = FALSE, iter = 5000, warmup = 1000, chains = 2, cores = 2, 
-  control=list(adapt_delat=0.95) # stan will work harder during warmup and potentially sample more
+  control=list(adapt_delta=0.95) # stan will work harder during warmup and potentially sample more
   # efficiently. 
 ) ###### crash 
 
