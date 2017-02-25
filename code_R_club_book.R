@@ -3877,6 +3877,7 @@ num_11/num_11_10
 library(rethinking)
 data("WaffleDivorce")
 d <- WaffleDivorce
+mean(d$Divorce)
 head(d)
 d$Divorce.SE
 d$Marriage.SE
