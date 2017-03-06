@@ -3951,8 +3951,6 @@ m14.2 <- map2stan(
   WAIC = F, iter = 5000, warmup = 1000, chains = 3, cores = 3, 
   control=list(adapt_delta=0.95))
 
-
-
 ############ For 03-03-2017 ######################### 
 # R code 14.6 
 library(rethinking)
@@ -3965,7 +3963,7 @@ d$logmass <- log(d$mass)
 # prep data 
 data_list <- list(
   kcal = d$kcal.per.g, 
-  neocortex = d$neocortex.prop, 
+  neocortex = d$neocortex.prop, # here it was defined as neocortex.prop... 
   logmass = d$logmass
 )
 
@@ -3977,12 +3975,15 @@ m14.3 <- map2stan(
     neocortex ~ dnorm(nu, sigma_N), 
     a ~ dnorm(0, 100), 
     c(bN, bM) ~ dnorm(0, 10), 
-    nu ~ dnorm(0.5, 1), 
+    nu ~ dnorm(0.5, 1), # why pick 0.5? based on the mean, how to determine the prior of stddev??? 
     sigma_N ~ dcauchy(0, 1), 
     sigma ~ dcauchy(0, 1)
   ), 
   data = data_list, iter = 1e4, chains = 2
 )
+
+mean(d$neocortex.prop, na.rm=T)
+sd(d$neocortex.prop, na.rm=T) 
 
 # R code 14.8 
 precis(m14.3, depth = 2)
@@ -4011,13 +4012,13 @@ m14.3cc <- map2stan(
 precis(m14.3cc)
 precis(m14.3)
 
-# R code 14.10
+# R code 14.10, when to include this???? real plant world example... 
 m14.4 <- map2stan(
   alist(
     kcal ~ dnorm(mu, sigma), 
     mu <- a + bN*neocortex + bM*logmass, 
     neocortex ~ dnorm(nu, sigma_N),
-    nu <- a_N + gM*logmass, 
+    nu <- a_N + gM*logmass, # assumes linear relationship between the two predictors 
     a ~ dnorm(0, 100), 
     c(bN, bM, gM) ~ dnorm(0, 10), 
     a_N ~ dnorm(0.5, 1), 
