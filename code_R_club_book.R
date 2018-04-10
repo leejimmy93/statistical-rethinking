@@ -4029,18 +4029,58 @@ m14.4 <- map2stan(
 
 precis(m14.4)
 
+# chapter 11, over dispersion 
+library(rstan)
+library(rethinking)
+pbar <- 0.5 
+theta <- 2
+curve(dbeta2(x, pbar, theta), from = 0, to = 1, xlab = "probability", ylab = "density")
 
+data("UCBadmit")
+d <- UCBadmit
+m11.5 <- map2stan(
+  alist(
+    admit ~ dbetabinom(applications, pbar, theta), # beta binomial distribution, 
+    # pbar is the average probability, theta describes how spread out the distribution is  
+    logit(pbar) <- a,  
+    a ~ dnorm(0, 2),
+    theta ~ dexp(1) # prior 
+  ),
+  data = d, 
+  constraints = list(theta="lower=0"),
+  start = list(theta=3),
+  iter = 4000, warmup = 1000, chains = 2, cores = 2)
 
+# R code 11.27 
+precis(m11.5)
 
+# R code 11.29 
+post <- extract.samples(m11.5)
+quantile(logistic(post$a), c(0.025, 0.5, 0.975))
 
+post <- extract.samples(m11.5)
+# draw posterior mean beta distribution 
+curve(dbeta2(x, mean(logistic(post$a)), mean(post$theta)), from = 0, to = 1, 
+      ylab = "Density", xlab = "probability admit", ylim=c(0,3), lwd = 2)
 
+# draw 100 beta distrition sampled from posterior
+for(i in 1:100){
+  p <- logistic(post$a[i])
+  theta <- post$theta[i]
+  curve(dbeta2(x, p, theta), add = T, col=col.alpha("black", 0.2))
+}
 
+# R code 11.30 
+postcheck(m11.5)
 
+# R code 11.31, negative binomial or gamma-poisson model 
+mu <- 3
+theta <- 1
+curve(dgamma2(x, mu, theta), from = 0, to = 10)
 
-
-
-
-
+mu <- 3
+theta <- 0.0000001
+curve(dgamma2(x, mu, theta), from = 0, to = 10)
 
 
 
